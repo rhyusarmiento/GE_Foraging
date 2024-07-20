@@ -6,7 +6,12 @@ from copy import deepcopy
 from StateMachine import StateMachine
 
 class Agent:
-    def __init__(self, grid, rules, id='', gene=None) -> None:
+    def __init__(self, rules, id='', gene=None) -> None:
+        if id == '':
+            self.id = f'ID{random.randint(0, 1000)}'
+        else:
+            self.id = id
+        
         if gene is None:
             genelist = []
             for x in range(const.GENE_LEN):
@@ -17,78 +22,89 @@ class Agent:
             self.gene = Gene(genelist)
         else:
             self.gene = deepcopy(gene)
-            
+        
         self.rules = rules
+        self.phenotype = None
+            
         self.SM = None
         self.currentState = None
-        # agent id: either set manually else set randomly
-        if id == '':
-            self.id = f'ID{random.randint(0, 1000)}'
-        else:
-            self.id = id
-            
-        self.memory = []
-        # generate string representation of program from grammar
-        self.phenotype = None
+        
         self.terminal_functions_run = 0
+        
+        self.numFood = 0
     
     def printID(self):
         print(f"{self.id}ID")
     
-    def Pick():
-        None
+    def Pick(self):
+        if self.should_end():
+            self.end()
+        # would check if there is food
+        if True:
+            self.numFood += 1
+        return "isDone"
         
-    def Drop():
-        None
+    def Drop(self):
+        if self.should_end():
+            self.end()
+        # drop food
+        if self.numFood > 0:
+            self.numFood -= 1
+        return "isDone"
         
-    def Consume():
-        None
-        
-    def Explore():
-        None
-        
-    def Den():
-        None
-        
-    def Known():
-        None
-
-    def runStateBehavior(self, keyWord):
-        if keyWord == "Pick":
-            setter = self.Pick()
-        elif keyWord == "Drop":
-            setter = self.Drop()
-        elif keyWord == "Consume":
-            setter = self.Consume()
-        elif keyWord == "Explore":
-            setter = self.Explore()
-        elif keyWord == "Den":
-            setter = self.Den()
-        elif keyWord == "Known":
-            setter = self.Known()
-        return setter
-            
-    # functions to taking the output of generate_phenotype and turning it into a runnable program
-    def run_phenotype_once(self):
+    def Consume(self):
         if self.should_end():
             self.end()
             
+        if self.numFood > 0:
+            self.numFood -= 1
+        return "isDone"
+        
+    def Explore(self):
+        if self.should_end():
+            self.end()
+        # move 
+        # one found food
+        if True:
+            return "isDone"
+        return "continue"
+        
+    def Den(self):
+        if self.should_end():
+            self.end()
+        return "isDone"
+        
+    def Known(self):
+        if self.should_end():
+            self.end()
+        # go to known food that is stored in memory
+        return "isDone"
+
+    def runStateBehavior(self):            
         behaviorKey = self.currentState.behavior()
-        input = self.runStateBehavior(behaviorKey)
-        self.currentState = self.changeState(input)
+        if behaviorKey == "Pick":
+            setter = self.Pick()
+        elif behaviorKey == "Drop":
+            setter = self.Drop()
+        elif behaviorKey == "Consume":
+            setter = self.Consume()
+        elif behaviorKey == "Explore":
+            setter = self.Explore()
+        elif behaviorKey == "Den":
+            setter = self.Den()
+        elif behaviorKey == "Known":
+            setter = self.Known()
+        
+        if setter != "continue":
+            self.currentState.changeState(setter)
             
     def generate_SM(self):
         self.SM = StateMachine()
         self.SM.createSM(self.phenotype, self.gene.genotype)
     
-    def run_phenotype(self):
-        # repeatedly run the phenotype until the should_end is true
+    def runAgent(self):
         try:
-            self.grid.history[self.id].clear() # reset before running again
             self.terminal_functions_run = 0
-            self.position = (0,0)
-            # self.heading = const.NORTH
-            self.grid.update_history(self, self.position)
             self.gene.current_codon = 0
             if self.phenotype is None:
                 self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")
@@ -96,17 +112,14 @@ class Agent:
                 self.generate_SM()
             self.currentState = self.SM.getStartState()
             while(True):
-                self.run_phenotype_once()
+                self.runStateBehavior()
         except EndException:
             None
             # reward for food, punish for distance
             # self.gene.cost = np.round((((self.consecutiveFood * const.CONSECUTIVE_FOOD) + (self.food_touched * const.FOOD_INCENTIVE)) - ((self.distance * const.DISTANCEPINCH) + (self.offPath * const.OFFPATHPENALTY))), 2)
             # if self.food_touched == const.FOOD_NUM:
                 # self.gene.cost += 50
-            #TODO: how big should the diversity addition be? 
-            #print("cost: ", self.phenotype, "\n->", self.gene.cost)S
     
-    # functions for ending the simulation (terminal_functions_run is probably useless)
     def should_end(self):
         self.terminal_functions_run += 1
         if self.terminal_functions_run == 1000:
