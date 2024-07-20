@@ -4,6 +4,7 @@ import const as const
 from copy import deepcopy
 # import numpy as np
 from StateMachine import StateMachine
+from GGraph import GGraph
 
 class Agent:
     def __init__(self, rules, id='', gene=None) -> None:
@@ -111,14 +112,21 @@ class Agent:
             if self.SM is None:
                 self.generate_SM()
             self.currentState = self.SM.getStartState()
-            while(True):
-                self.runStateBehavior()
+            if self.currentState is not None:
+                while(True):
+                    self.runStateBehavior()
+            else:
+                print("dead agent; no start state")
         except EndException:
             None
             # reward for food, punish for distance
             # self.gene.cost = np.round((((self.consecutiveFood * const.CONSECUTIVE_FOOD) + (self.food_touched * const.FOOD_INCENTIVE)) - ((self.distance * const.DISTANCEPINCH) + (self.offPath * const.OFFPATHPENALTY))), 2)
             # if self.food_touched == const.FOOD_NUM:
                 # self.gene.cost += 50
+    
+    def setup(self):
+        self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")
+        self.generate_SM()
     
     def should_end(self):
         self.terminal_functions_run += 1
@@ -134,15 +142,10 @@ class EndException(Exception):
         self.message = message
         super().__init__(self.message)
 
-# if __name__ == "__main__":
-#     inputgrid = Grid(const.GRID_WIDTH, const.GRID_HEIGHT) 
-    
-#     for i in range(5):
-#         # need rules
-#         a = Agent(grid=inputgrid, gene=Gene([0, 2, 3, 4, 5]))
-#         a.run_phenotype()
-#         # if a.gene.cost > 10:
-#         print("the phenotype is ", a.phenotype)
-#         print(inputgrid.printed_history(a))
-#         print("cost is ", a.gene.cost)
-#         print("_____________________")
+if __name__ == "__main__":
+    ggraph = GGraph(const.RULES)
+    # ggraph.printGraph()
+    print("Agent:")
+    agent = Agent(ggraph)
+    agent.setup()
+    agent.SM.printSM()

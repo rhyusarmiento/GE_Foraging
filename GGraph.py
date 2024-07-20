@@ -1,4 +1,5 @@
 from const import RULES
+import re
 
 class GGraph:
     def __init__(self, rules):
@@ -51,6 +52,15 @@ class GGraph:
                     trunckNode.weight = terminalCount    
                 trunckNode.appendOutNode(branchNode)
                 branchNode.appendInNode(trunckNode)
+                non_terminals = re.findall("<[^>]+>", production)
+                nonTerminalSet = set()
+                nonTerminalSet.add(trunckNode.value)
+                for non_terminal in non_terminals:
+                    nonTerminalSet.add(non_terminal)
+                for non_terminal in nonTerminalSet:
+                    currNode = self.selectNode(non_terminal)
+                    branchNode.appendOutNode(currNode)
+                    currNode.appendInNode(branchNode)
                 self.updateWeights(branchNode)
             self.updateWeights(trunckNode)
         if self.isGood:
@@ -75,19 +85,21 @@ class GGraph:
             for node in Node.outNodes:
                 if node.isTerminal or (node.weight > Node.weight):
                     terminalPath.append(node)
-            # NOTE: not all inculsive could still break with super 'cold' nodes
+            
             if len(terminalPath) == 0:
                 for node in Node.inNodes:
                     if node.isTerminal or (node.weight > Node.weight):
                         terminalPath.append(node)
             
             if len(terminalPath) == 0:
-                node = Node.outNodes[0]
-                terminalPath.append(node)
+                if len(Node.outNodes) > 0:
+                    node = Node.outNodes[0]
+                    terminalPath.append(node)
                 
             if len(terminalPath) == 0:
-                node = Node.inNodes[0]
-                terminalPath.append(node)
+                if len(Node.inNodes) > 0:
+                    node = Node.inNodes[0]
+                    terminalPath.append(node)
             
             return self.weight_traveral(terminalPath[codon % len(terminalPath)], codon)  
         
@@ -115,6 +127,6 @@ class Node:
 if __name__ == "__main__":
     ggraph = GGraph(RULES)
     ggraph.printGraph()
-    print(ggraph.find_by_mod('<progs>', 32))
-    print(ggraph.find_by_weight('<code>', 32))
+    # print(ggraph.find_by_mod('<progs>', 32))
+    # print(ggraph.find_by_weight('<code>', 32))
     

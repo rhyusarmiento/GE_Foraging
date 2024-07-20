@@ -4,8 +4,6 @@ class Gene():
     def __init__(self, genotype) -> None:
         self.genotype = genotype
         self.current_codon = 0
-        self.cost = 0
-        self.index = 0
     
     def get_codon(self):
         return self.genotype[self.current_codon]

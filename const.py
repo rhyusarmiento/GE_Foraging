@@ -1,3 +1,5 @@
+GENE_LEN = 1000
+
 RULES = {
     "<start>": ["<start>", "<SM>"],
     "<SM>": ["<node>", "<input>"],
@@ -8,7 +10,7 @@ RULES = {
     "<Explore>": ["Explore,<SM>"],
     "<Den>": ["Den,<SM>"],
     "<Known>": ["Known,<SM>"],
-    "<input>": ["(<nodeID>-<inputtype>-<nodeID>),<SM>", "none"],
+    "<input>": ["(<nodeID>-<inputtype>-<nodeID>),<SM>"],
     "<nodeID>": ["Pick", "Drop", "Consume", "Explore", "Den", "Known"],
     "<inputtype>": ["isFood", "isTired", "isHungry", "isBored", "isProductive", "isDone"]
 }
