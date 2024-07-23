@@ -1,5 +1,6 @@
 import random
 import plotly.graph_objects as go
+import plotly.io as pio
 
 class StateMachine:
     def __init__(self):
@@ -209,145 +210,148 @@ class StateMachine:
         nodey = []
         edgex = []
         edgey = []
+        node_labels = []
+        edge_labels = []
         beenTo = {}
-        
-        if self.StartInput["start"] is not None:
-            x,y = self.StartInput['start'].getLocation()
-            nodey.append(y)
-            nodex.append(x)
-            beenTo[self.StartInput["start"]] = True
             
         for state in self.PickStates:
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
                 
         for state in self.DropStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
         
         for state in self.ConsumeStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
                 
         for state in self.ExploreStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
                 
         for state in self.DenStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
                 
         for state in self.KnownStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
+                node_labels.append(state.printName())
                 nodey.append(y)
                 nodex.append(x)
+                beenTo[state] = True
             for key in state.Outros:
-                x1,y1 = state.Outros[key].getLocaction()
+                currState = state.Outros[key]
+                x1,y1 = currState.getLocation()
                 edgex.append(x)
                 edgex.append(x1)
                 edgex.append(None)
                 edgey.append(y)
                 edgey.append(y1)
                 edgey.append(None)
+                edge_labels.append(key)
     
         edge_trace = go.Scatter(
             x=edgex, y=edgey,
+            mode='lines+text',
             line=dict(width=0.5, color='#888'),
-            hoverinfo='none',
-            mode='lines'
+            marker=dict(symbol="arrow-right"),
+            text=edge_labels,
+            textposition='middle left'
         )
         
         node_trace = go.Scatter(
             x=nodex, y=nodey,
-            mode='markers',
-            hoverinfo='text',
-            marker=dict(
-                showscale=True,
-                # colorscale options
-                #'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
-                #'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
-                #'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
-                colorscale='YlGnBu',
-                reversescale=True,
-                color=[],
-                size=10,
-                colorbar=dict(
-                    thickness=15,
-                    title='Node Connections',
-                    xanchor='left',
-                    titleside='right'
-                ),
-                line_width=2))
+            mode='markers+text',
+            text=node_labels,
+            textposition='top center'
+        )
         
         fig = go.Figure(
             data=[edge_trace, node_trace],
             layout=go.Layout(
-                title='Network graph made with Python',
+                title='Agent State Machine',
                 titlefont_size=16,
                 showlegend=False,
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
-                annotations=[ dict(
-                    text="bro",
-                    showarrow=True,
-                    xref="paper", yref="paper",
-                    x=0.005, y=-0.002 ) ],
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
                 )
             )
         
+        pio.renderers.default = 'notebook'
         fig.show()
                 
     def changeState(self, input):
