@@ -1,3 +1,6 @@
+import random
+import plotly.graph_objects as go
+
 class StateMachine:
     def __init__(self):
         self.StartInput = {}
@@ -13,39 +16,41 @@ class StateMachine:
     def createSM(self, phenotype, genotype):
         commandList = phenotype.replace(",", " ").split()
         isFirst = True
+        inCre = 0
         for command in commandList:
+            inCre += 1
             if command == "Pick":
-                node = Pick()
+                node = Pick(inCre)
                 self.PickStates.append(node)
                 if isFirst is True:
                     self.StartInput["start"] = node
                     isFirst = False
             elif command == "Drop":
-                node = Drop()
+                node = Drop(inCre)
                 self.DropStates.append(node)
                 if isFirst is True:
                     self.StartInput["start"] = node
                     isFirst = False
             elif command == "Consume":
-                node = Consume()
+                node = Consume(inCre)
                 self.ConsumeStates.append(node)
                 if isFirst is True:
                     self.StartInput["start"] = node
                     isFirst = False
             elif command == "Explore":
-                node = Explore()
+                node = Explore(inCre)
                 self.ExploreStates.append(node)
                 if isFirst is True:
                     self.StartInput["start"] = node
                     isFirst = False
             elif command == "Den":
-                node = Den()
+                node = Den(inCre)
                 self.DenStates.append(node)  
                 if isFirst is True:
                     self.StartInput["start"] = node
                     isFirst = False  
             elif command == "Known":
-                node = Known()
+                node = Known(inCre)
                 self.KnownStates.append(node)
                 if isFirst is True:
                     self.StartInput["start"] = node
@@ -195,6 +200,156 @@ class StateMachine:
             for key in state.Outros:
                 print(f'{key}: {state.Outros[key].printName()}')
         num = 0
+        
+    def filloutDisplay(self, state, stateDic, nodeX, nodeY):
+        nodeX.append
+        
+    def display(self):
+        nodex = []
+        nodey = []
+        edgex = []
+        edgey = []
+        beenTo = {}
+        
+        if self.StartInput["start"] is not None:
+            x,y = self.StartInput['start'].getLocation()
+            nodey.append(y)
+            nodex.append(x)
+            beenTo[self.StartInput["start"]] = True
+            
+        for state in self.PickStates:
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+                
+        for state in self.DropStates:            
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+        
+        for state in self.ConsumeStates:            
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+                
+        for state in self.ExploreStates:            
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+                
+        for state in self.DenStates:            
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+                
+        for state in self.KnownStates:            
+            if state not in beenTo:
+                x,y = state.getLocation()
+                nodey.append(y)
+                nodex.append(x)
+            for key in state.Outros:
+                x1,y1 = state.Outros[key].getLocaction()
+                edgex.append(x)
+                edgex.append(x1)
+                edgex.append(None)
+                edgey.append(y)
+                edgey.append(y1)
+                edgey.append(None)
+    
+        edge_trace = go.Scatter(
+            x=edgex, y=edgey,
+            line=dict(width=0.5, color='#888'),
+            hoverinfo='none',
+            mode='lines'
+        )
+        
+        node_trace = go.Scatter(
+            x=nodex, y=nodey,
+            mode='markers',
+            hoverinfo='text',
+            marker=dict(
+                showscale=True,
+                # colorscale options
+                #'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
+                #'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
+                #'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
+                colorscale='YlGnBu',
+                reversescale=True,
+                color=[],
+                size=10,
+                colorbar=dict(
+                    thickness=15,
+                    title='Node Connections',
+                    xanchor='left',
+                    titleside='right'
+                ),
+                line_width=2))
+        
+        fig = go.Figure(
+            data=[edge_trace, node_trace],
+            layout=go.Layout(
+                title='Network graph made with Python',
+                titlefont_size=16,
+                showlegend=False,
+                hovermode='closest',
+                margin=dict(b=20,l=5,r=5,t=40),
+                annotations=[ dict(
+                    text="bro",
+                    showarrow=True,
+                    xref="paper", yref="paper",
+                    x=0.005, y=-0.002 ) ],
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                )
+            )
+        
+        fig.show()
+                
     def changeState(self, input):
         self.CurrentState = self.CurrentState.changeState(input)
         return self.CurrentState
@@ -204,8 +359,12 @@ class StateMachine:
         return self.StartInput["start"]
     
 class State:
-    def __init__(self):
+    def __init__(self, disIncr):
         self.Outros = {}
+        self.displayLocation = (disIncr + random.randint(0,3), random.randint(0, 20))
+    
+    def getLocation(self):
+        return self.displayLocation
     
     def changeState(self, input):
         # check state?
