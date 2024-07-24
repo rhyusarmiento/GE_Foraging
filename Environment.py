@@ -3,7 +3,19 @@ from const import ENVIORN_DIM
 class Environment:
     def __init__(self):
         self.spacesYX = []
-    
+        
+    def printSpace(self):
+        for y in self.spacesYX:
+            printStr = ""
+            for x in y:
+                if x is None:
+                    printStr += "o"
+                elif x.who() == "Food":
+                    printStr += "F"
+                elif x.who() == "Den":
+                    printStr += "D"
+            print(printStr)
+               
     def preBuild(self, locationAndObject):
         None
     
@@ -18,10 +30,11 @@ class Environment:
         x,y = location
         self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
         
-    def cleanCor(num):
-        if num > ENVIORN_DIM:
+    def cleanCor(self, num):
+        clean = num
+        if num >= ENVIORN_DIM:
             clean = (num - ENVIORN_DIM)
-        elif num < 0:
+        if num < 0:
             clean = (ENVIORN_DIM + num)
         return clean 
         
@@ -59,7 +72,7 @@ class FoodContainer:
     def addFood(self):
         self.foodHere += 1
     
-    def who():
+    def who(self):
         return "Food"
     
     def takeFood(self):
@@ -74,7 +87,7 @@ class Den:
         self.locationXY = location
         self.foodStored = 0
     
-    def who():
+    def who(self):
         return "Den"
     
     def depositFood(self, food):

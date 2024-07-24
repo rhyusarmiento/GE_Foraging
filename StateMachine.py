@@ -371,8 +371,10 @@ class State:
         return self.displayLocation
     
     def changeState(self, input):
-        # check state?
-        return self.Outros[input]
+        if input in self.Outros:
+            return self.Outros[input]
+        else:
+            return None
     
     def inputState(self, input, state):
         if input not in self.Outros:

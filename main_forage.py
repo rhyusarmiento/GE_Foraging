@@ -16,5 +16,7 @@ world.inputObjectXY(agentDen.locationXY, agentDen)
 
 ggraph = GGraph(RULES)
 agent = Agent(ggraph, agentDen, world)
+agent.runAgent()
+world.printSpace()
 # agent.setup()
 # agent.SM.display()

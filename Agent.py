@@ -59,19 +59,19 @@ class Agent:
         
     def checkFood(self):
         x,y = self.locationXY
-        if self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
             self.foodLocations.add((x+1,y))
             return True
-        if self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
             self.foodLocations.add((x-1,y))
             return True
-        if self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
             self.foodLocations.add((x,y-1))
             return True
-        if self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
             self.foodLocations.add((x,y+1))
             return True
-        if self.worldMap.checkSpaceXY((x,y)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
             self.foodLocations.add((x,y))
             return True
         else:
@@ -82,31 +82,31 @@ class Agent:
             self.end()
             
         x,y = self.locationXY
-        if self.worldMap.checkSpaceXY((x+1,y)).who() == "Food":
+        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x+1,y)).who() == "Food":
             self.foodLocations.add((x+1,y))
             if self.worldMap.checkSpaceXY((x+1,y)).takeFood():
                 self.numFood += 1
             else:
                 self.worldMap.inputObjectXY((x+1,y), None)
-        elif self.worldMap.checkSpaceXY((x,y)).who() == "Food":
+        elif self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
             self.foodLocations.add((x,y))
             if self.worldMap.checkSpaceXY((x,y)).takeFood():
                 self.numFood += 1
             else:
                 self.worldMap.inputObjectXY((x,y), None)
-        elif self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
+        elif self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
             self.foodLocations.add((x-1,y))
             if self.worldMap.checkSpaceXY((x-1,y)).takeFood():
                 self.numFood += 1
             else:
                 self.worldMap.inputObjectXY((x-1,y), None)
-        elif self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
+        elif self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
             self.foodLocations.add((x,y-1))
             if self.worldMap.checkSpaceXY((x,y-1)).takeFood():
                 self.numFood += 1
             else:
                 self.worldMap.inputObjectXY((x,y-1), None)
-        elif self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
+        elif self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
             self.foodLocations.add((x,y+1))
             if self.worldMap.checkSpaceXY((x,y+1)).takeFood():
                 self.numFood += 1
@@ -125,9 +125,9 @@ class Agent:
             self.end()
             
         if self.numFood > 0:
-            if self.worldMap.checkSpaceXY(self.locationXY).who() == "Food":
+            if self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Food":
                 self.worldMap.checkSpaceXY(self.locationXY).addFood()
-            elif self.worldMap.checkSpaceXY(self.locationXY).who() == "Den":
+            elif self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Den":
                 self.worldMap.checkSpaceXY(self.locationXY).depositFood(1)
             else:
                 self.worldMap.inputObjectXY(self.locationXY, FoodContainer(1))
@@ -238,7 +238,9 @@ class Agent:
             setter = self.Known()
         
         if setter != "continue":
-            self.currentState.changeState(setter)
+            state = self.currentState.changeState(setter)
+            if state is not None:
+                self.currentState = state
             
     def generate_SM(self):
         self.SM = StateMachine()
@@ -272,7 +274,7 @@ class Agent:
     
     def should_end(self):
         self.terminal_functions_run += 1
-        if self.terminal_functions_run == 1000:
+        if self.terminal_functions_run == 500:
             return True
         return False
     
