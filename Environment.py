@@ -16,34 +16,41 @@ class Environment:
             
     def inputObjectXY(self, location, object):
         x,y = location
-        self.spacesYX[y][x] = object
+        self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
+        
+    def cleanCor(num):
+        if num > ENVIORN_DIM:
+            clean = (num - ENVIORN_DIM)
+        elif num < 0:
+            clean = (ENVIORN_DIM + num)
+        return clean 
         
     def inputLargeObjectXY(self, location, radius, object):
         xcor,ycor = location
         for y in range(radius):
             for x in range(radius):
-                self.spacesYX[ycor + y][xcor + x] = object
+                self.spacesYX[self.cleanCor(ycor + y)][self.cleanCor(xcor + x)] = object
         
         for y in range(radius):
             for x in range(radius):
-                self.spacesYX[ycor + y][xcor - x] = object
+                self.spacesYX[self.cleanCor(ycor + y)][self.cleanCor(xcor - x)] = object
 
         for y in range(radius):
             for x in range(radius):
-                self.spacesYX[ycor - y][xcor + x] = object
+                self.spacesYX[self.cleanCor(ycor - y)][self.cleanCor(xcor + x)] = object
         
         for y in range(radius):
             for x in range(radius):
-                self.spacesYX[ycor - y][xcor - x] = object
+                self.spacesYX[self.cleanCor(ycor - y)][self.cleanCor(xcor - x)] = object
         # a way to remove large object
         
     def checkSpaceXY(self, location):
         x,y = location
-        return self.spacesYX[y][x]
+        return self.spacesYX[self.cleanCor(y)][self.cleanCor(x)]
     
     def removeObjectXY(self, location):
         x,y = location
-        self.spacesYX[y][x] = None
+        self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
     
 class FoodContainer:
     def __init__(self, food=0):
@@ -72,3 +79,10 @@ class Den:
     
     def depositFood(self, food):
         self.foodStored += food
+        
+    def isfeed(self):
+        if self.foodStored > 0:
+            return True
+        else:
+            return False
+

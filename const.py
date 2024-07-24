@@ -1,4 +1,5 @@
 GENE_LEN = 500
+TOTALFOOD = 0
 
 ENVIORN_DIM = 50
 DEN_SIZE = 5
@@ -15,5 +16,5 @@ RULES = {
     "<Known>": ["Known,<SM>"],
     "<input>": ["(<nodeID>-<inputtype>-<nodeID>),<SM>"],
     "<nodeID>": ["Pick", "Drop", "Consume", "Explore", "Den", "Known"],
-    "<inputtype>": ["isFood", "isTired", "isHungry", "isBored", "isProductive", "isDone"]
+    "<inputtype>": ["isFood", "isTired", "isHungry", "isBored", "isDone"]
 }

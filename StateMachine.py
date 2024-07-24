@@ -202,8 +202,8 @@ class StateMachine:
                 print(f'{key}: {state.Outros[key].printName()}')
         num = 0
         
-    def filloutDisplay(self, state, stateDic, nodeX, nodeY):
-        nodeX.append
+    # def filloutDisplay(self, state, stateDic, nodeX, nodeY):
+    #     nodeX.append
         
     def display(self):
         nodex = []
