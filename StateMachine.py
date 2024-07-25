@@ -14,151 +14,137 @@ class StateMachine:
         self.CurrentState = None
         self.currentCodon = 0
     
+    def initGetState(self, command):
+        if command == "Pick":
+            node = Pick(1)
+            self.PickStates.append(node)
+            self.StartInput["start"] = node
+            return node
+        elif command == "Drop":
+            node = Drop(1)
+            self.DropStates.append(node)
+            self.StartInput["start"] = node
+            return node
+        elif command == "Consume":
+            node = Consume(1)
+            self.ConsumeStates.append(node)
+            self.StartInput["start"] = node
+            return node
+        elif command == "Explore":
+            node = Explore(1)
+            self.ExploreStates.append(node)
+            self.StartInput["start"] = node
+            return node
+        elif command == "Den":
+            node = Den(1)
+            self.DenStates.append(node)  
+            self.StartInput["start"] = node
+            return node
+        elif command == "Known":
+            node = Known(1)
+            self.KnownStates.append(node)
+            self.StartInput["start"] = node
+            return node
+        else:
+            return None
+        
     def createSM(self, phenotype, genotype):
         commandList = phenotype.replace(",", " ").split()
-        isFirst = True
-        inCre = 0
+        inCre = 1
+        fillQueue = []
+        stateStack = []
+        while self.initGetState(commandList[0]) is None:
+            commandList.append(commandList.pop(0))
+        currState = self.initGetState(commandList[0])
+        commandList.pop(0)
+        
         for command in commandList:
-            inCre += 1
-            if command == "Pick":
-                node = Pick(inCre)
-                self.PickStates.append(node)
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False
-            elif command == "Drop":
-                node = Drop(inCre)
-                self.DropStates.append(node)
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False
-            elif command == "Consume":
-                node = Consume(inCre)
-                self.ConsumeStates.append(node)
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False
-            elif command == "Explore":
-                node = Explore(inCre)
-                self.ExploreStates.append(node)
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False
-            elif command == "Den":
-                node = Den(inCre)
-                self.DenStates.append(node)  
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False  
-            elif command == "Known":
-                node = Known(inCre)
-                self.KnownStates.append(node)
-                if isFirst is True:
-                    self.StartInput["start"] = node
-                    isFirst = False
-            elif "(" in command and ")" in command:
-                inputCommand = command[1:-1].replace("-"," ").split()
-                firstCommand = inputCommand[0]
-                inputType = inputCommand[1]
-                lastCommand = inputCommand[2]
-                if firstCommand == "Pick":
+            if "(" in command and ")" in command:
+                inCre += 1
+                inputType = command[1:-1]
+                if len(stateStack) == 0:
+                    continue
+                else:
+                    toState = stateStack.pop()
+                if toState == "Pick":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.PickStates) != 0:
-                        firstNode = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
+                    if len(self.PickStates) > 0:
+                        state = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
                         self.currentCodon += 1
+                        if state.isFull():
+                            newState = Pick(inCre)
+                            self.PickStates.append(newState)
                     else:
-                        firstNode = None
-                elif firstCommand == "Drop":
+                        state = Pick(inCre)
+                        self.PickStates.append(state)
+                elif toState == "Drop":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.DropStates) != 0:
-                        firstNode = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
+                    if len(self.DropStates) > 0:
+                        state = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
                         self.currentCodon += 1
+                        if state.isFull():
+                            newState = Drop(inCre)
+                            self.DropStates.append(newState)
                     else:
-                        firstNode = None
-                elif firstCommand == "Consume":
+                        state = Drop(inCre)
+                        self.DropStates.append(state)
+                elif toState == "Consume":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.ConsumeStates) != 0:
-                        firstNode = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
+                    if len(self.ConsumeStates) > 0:
+                        state = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
+                        if state.isFull():
+                            newState = Consume(inCre)
+                            self.ConsumeStates.append(newState)
                         self.currentCodon += 1
                     else:
-                        firstNode = None
-                elif firstCommand == "Explore":
+                        state = Consume(inCre)
+                        self.ConsumeStates.append(state)
+                elif toState == "Explore":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.ExploreStates) != 0:
-                        firstNode = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
+                    if len(self.ExploreStates) > 0:
+                        state = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
+                        if state.isFull():
+                            newState = Explore(inCre)
+                            self.ExploreStates.append(newState)
                         self.currentCodon += 1
                     else:
-                        firstNode = None
-                elif firstCommand == "Den":
+                        state = Explore(inCre)
+                        self.ExploreStates.append(state)
+                elif toState == "Den":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.DenStates) != 0:
-                        firstNode = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
+                    if len(self.DenStates) > 0:
+                        state = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
+                        if state.isFull():
+                            newState = Den(inCre)
+                            self.DenStates.append(newState)
                         self.currentCodon += 1
                     else:
-                        firstNode = None  
-                elif firstCommand == "Known":
+                        state = Den(inCre)
+                        self.DenStates.append(state)
+                elif toState == "Known":
                     if self.currentCodon > len(genotype):
                         self.currentCodon = 0
-                    if len(self.KnownStates) != 0:
-                        firstNode = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
+                    if len(self.KnownStates) > 0:
+                        state = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
+                        if state.isFull():
+                            newState = Known(inCre)
+                            self.KnownStates.append(newState)
                         self.currentCodon += 1
                     else:
-                        firstNode = None
-                if lastCommand == "Pick":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.PickStates) != 0:
-                        firstNode = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                elif lastCommand == "Drop":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.DropStates) != 0:
-                        lastNode = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                elif lastCommand == "Consume":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.ConsumeStates) != 0:
-                        lastNode = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                elif lastCommand == "Explore":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.ExploreStates) != 0:
-                        lastNode = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                elif lastCommand == "Den":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.DenStates) != 0:
-                        lastNode = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                elif lastCommand == "Known":
-                    if self.currentCodon > len(genotype):
-                        self.currentCodon = 0
-                    if len(self.KnownStates) != 0:
-                        lastNode = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
-                        self.currentCodon += 1
-                    else:
-                        lastNode = None
-                if firstNode is not None and lastNode is not None:
-                    firstNode.inputState(inputType, lastNode)
+                        state = Known(inCre)
+                        self.KnownStates.append(state)
+                currState.inputState(inputType, state)
+                if not state.isFull():
+                    fillQueue.append(state)
+                if currState.isFull():
+                    currState = fillQueue.pop(0)
+            else:
+                stateStack.append(command)
                 
     def printSM(self):
         num = 0
@@ -367,6 +353,12 @@ class State:
         self.Outros = {}
         self.displayLocation = (disIncr + random.randint(0,3), random.randint(0, 20))
     
+    def isFull(self):
+        if len(self.Outros) >= 5:
+            return True
+        else:
+            return False
+        
     def getLocation(self):
         return self.displayLocation
     

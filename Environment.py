@@ -3,6 +3,7 @@ from const import ENVIORN_DIM
 class Environment:
     def __init__(self):
         self.spacesYX = []
+        self.numFood = 0
         
     def printSpace(self):
         for y in self.spacesYX:
@@ -28,6 +29,8 @@ class Environment:
             
     def inputObjectXY(self, location, object):
         x,y = location
+        if object is not None and object.who() == "Food":
+            self.numFood += 1
         self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
         
     def cleanCor(self, num):
@@ -63,10 +66,13 @@ class Environment:
     
     def removeObjectXY(self, location):
         x,y = location
+        object = self.checkSpaceXY((x,y))
+        if object is not None and object.who() == "Food":
+            self.numFood -= 1
         self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
     
 class FoodContainer:
-    def __init__(self, food=0):
+    def __init__(self, food=1):
         self.foodHere = food
     
     def addFood(self):

@@ -40,7 +40,7 @@ class Agent:
         self.numFood = 0
         self.hunger = 10
         self.movement = 0
-        self.foodLocations = set()
+        self.foodLocations = []
     
     def printID(self):
         print(f"{self.id}ID")
@@ -60,19 +60,19 @@ class Agent:
     def checkFood(self):
         x,y = self.locationXY
         if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
-            self.foodLocations.add((x+1,y))
+            self.foodLocations.append((x+1,y))
             return True
         if self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
-            self.foodLocations.add((x-1,y))
+            self.foodLocations.append((x-1,y))
             return True
         if self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
-            self.foodLocations.add((x,y-1))
+            self.foodLocations.append((x,y-1))
             return True
         if self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
-            self.foodLocations.add((x,y+1))
+            self.foodLocations.append((x,y+1))
             return True
         if self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
-            self.foodLocations.add((x,y))
+            self.foodLocations.append((x,y))
             return True
         else:
             return False
@@ -83,35 +83,35 @@ class Agent:
             
         x,y = self.locationXY
         if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x+1,y)).who() == "Food":
-            self.foodLocations.add((x+1,y))
+            self.foodLocations.append((x+1,y))
             if self.worldMap.checkSpaceXY((x+1,y)).takeFood():
                 self.numFood += 1
             else:
-                self.worldMap.inputObjectXY((x+1,y), None)
+                self.worldMap.removeObjectXY((x+1,y))
         elif self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
-            self.foodLocations.add((x,y))
+            self.foodLocations.append((x,y))
             if self.worldMap.checkSpaceXY((x,y)).takeFood():
                 self.numFood += 1
             else:
-                self.worldMap.inputObjectXY((x,y), None)
+                self.worldMap.removeObjectXY((x,y))
         elif self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
-            self.foodLocations.add((x-1,y))
+            self.foodLocations.append((x-1,y))
             if self.worldMap.checkSpaceXY((x-1,y)).takeFood():
                 self.numFood += 1
             else:
-                self.worldMap.inputObjectXY((x-1,y), None)
+                self.worldMap.removeObjectXY((x-1,y))
         elif self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
-            self.foodLocations.add((x,y-1))
+            self.foodLocations.append((x,y-1))
             if self.worldMap.checkSpaceXY((x,y-1)).takeFood():
                 self.numFood += 1
             else:
-                self.worldMap.inputObjectXY((x,y-1), None)
+                self.worldMap.removeObjectXY((x,y-1))
         elif self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
-            self.foodLocations.add((x,y+1))
+            self.foodLocations.append((x,y+1))
             if self.worldMap.checkSpaceXY((x,y+1)).takeFood():
                 self.numFood += 1
             else:
-                self.worldMap.inputObjectXY((x,y+1), None)
+                self.worldMap.removeObjectXY((x,y+1))
                 
         if self.needFood():
             return "isHungry"
