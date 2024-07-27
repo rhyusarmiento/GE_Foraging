@@ -27,11 +27,29 @@ class Environment:
                 newRow.append(None)
             self.spacesYX.append(newRow)
             
+    def addFood(self, food):
+        self.numFood += food
+            
+    def removeFood(self, food):
+        self.numFood -= food
+            
     def inputObjectXY(self, location, object):
         x,y = location
-        if object is not None and object.who() == "Food":
-            self.numFood += 1
-        self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
+        if self.checkSpaceXY((x,y)) is None:
+            if object is not None and object.who() == "Food":
+                self.addFood(object.foodHere)
+            self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
+        elif self.checkSpaceXY((x,y)).who() == "Food":
+            if object is not None and object.who() == "Food":
+                self.addFood(object.foodHere)
+                self.checkSpaceXY((x,y)).addFood()
+            elif object.who() == "Den":
+                self.removeFood(self.checkSpaceXY((x,y)).foodHere)
+                self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
+        elif self.checkSpaceXY((x,y)).who() == "Den":
+            if object is not None and object.who() == "Food":
+                self.addFood(object.foodHere)
+                self.checkSpaceXY((x,y)).depositFood(1)
         
     def cleanCor(self, num):
         clean = num
@@ -68,8 +86,8 @@ class Environment:
         x,y = location
         object = self.checkSpaceXY((x,y))
         if object is not None and object.who() == "Food":
-            self.numFood -= 1
-        self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
+            self.removeFood(object.foodHere)
+            self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
     
 class FoodContainer:
     def __init__(self, food=1):
@@ -84,7 +102,7 @@ class FoodContainer:
     def takeFood(self):
         if self.foodHere <= 0:
             return False
-        else:
+        elif self.foodHere > 0:
             self.foodHere -= 1
             return True
         

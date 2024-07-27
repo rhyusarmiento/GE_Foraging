@@ -13,7 +13,7 @@ class Agent:
             self.id = f'ID{random.randint(0, 1000)}'
         else:
             self.id = id
-        
+        # geno and pheno
         if gene is None:
             genelist = []
             for x in range(const.GENE_LEN):
@@ -27,16 +27,17 @@ class Agent:
         
         self.rules = rules
         self.phenotype = None
-            
+        # state
         self.SM = None
         self.currentState = None
-        
+        # oritation
         self.home = home
         self.worldMap = worldMap
         self.locationXY = None
-        
+        # simulation
         self.terminal_functions_run = 0
-        
+        self.score = 0
+        # Agent Stat
         self.numFood = 0
         self.hunger = 10
         self.movement = 0
@@ -45,8 +46,14 @@ class Agent:
     def printID(self):
         print(f"{self.id}ID")
     
+    def isDead(self):
+        if self.hunger < -10:
+            return True
+        else:
+            return False
+        
     def needFood(self):
-        if self.hunger < 2:
+        if self.hunger < 5:
             return True
         else: 
             return False
@@ -82,37 +89,44 @@ class Agent:
             self.end()
             
         x,y = self.locationXY
-        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x+1,y)).who() == "Food":
-            self.foodLocations.append((x+1,y))
-            if self.worldMap.checkSpaceXY((x+1,y)).takeFood():
+        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
+            self.foodLocations.append((x + 1,y))
+            if self.worldMap.checkSpaceXY((x + 1,y)).takeFood():
                 self.numFood += 1
+                self.worldMap.removeFood(1)
             else:
                 self.worldMap.removeObjectXY((x+1,y))
         elif self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
             self.foodLocations.append((x,y))
             if self.worldMap.checkSpaceXY((x,y)).takeFood():
                 self.numFood += 1
+                self.worldMap.removeFood(1)
             else:
                 self.worldMap.removeObjectXY((x,y))
         elif self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
             self.foodLocations.append((x-1,y))
             if self.worldMap.checkSpaceXY((x-1,y)).takeFood():
                 self.numFood += 1
+                self.worldMap.removeFood(1)
             else:
                 self.worldMap.removeObjectXY((x-1,y))
         elif self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
             self.foodLocations.append((x,y-1))
             if self.worldMap.checkSpaceXY((x,y-1)).takeFood():
                 self.numFood += 1
+                self.worldMap.removeFood(1)
             else:
                 self.worldMap.removeObjectXY((x,y-1))
         elif self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
             self.foodLocations.append((x,y+1))
             if self.worldMap.checkSpaceXY((x,y+1)).takeFood():
                 self.numFood += 1
+                self.worldMap.removeFood(1)
             else:
                 self.worldMap.removeObjectXY((x,y+1))
-                
+              
+        if self.isDead():
+            return "Dead"  
         if self.needFood():
             return "isHungry"
         if self.checkLoad():
@@ -125,13 +139,16 @@ class Agent:
             self.end()
             
         if self.numFood > 0:
+            self.numFood -= 1
             if self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Food":
                 self.worldMap.checkSpaceXY(self.locationXY).addFood()
             elif self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Den":
                 self.worldMap.checkSpaceXY(self.locationXY).depositFood(1)
             else:
-                self.worldMap.inputObjectXY(self.locationXY, FoodContainer(1))
-            self.numFood -= 1
+                self.worldMap.inputObjectXY(self.locationXY, FoodContainer())
+        
+        if self.isDead():
+            return "Dead" 
         if self.needFood():
             return "isHungry"
         if self.checkLoad():
@@ -146,6 +163,9 @@ class Agent:
         if self.numFood > 0:
             self.numFood -= 1
             self.hunger += 3
+        
+        if self.isDead():
+            return "Dead"
         if self.needFood():
             return "isHungry"
         if self.checkLoad():
@@ -155,6 +175,7 @@ class Agent:
     def Explore(self):
         if self.should_end():
             self.end()
+  
         dir = random.randint(0,3)
         x,y = self.locationXY
         if dir == 0:
@@ -170,12 +191,14 @@ class Agent:
             self.hunger -= .5
             self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-1))
 
-        if self.checkFood():
-            self.movement = 0
-            return "isFood"
+        if self.isDead():
+            return "Dead"
         if self.needFood():
             self.movement = 0
             return "isHungry"
+        if self.checkFood():
+            self.movement = 0
+            return "isFood"
         if self.checkLoad():
             return "isTried"
         if self.movement > 15:
@@ -199,18 +222,25 @@ class Agent:
             self.home.foodStored -= 1
             self.hunger += 3
             return "continue"
+        if self.isDead():
+            return "Dead" 
         else:
             return "isDone"
         
     def Known(self):
         if self.should_end():
             self.end()
+            
+        if self.isDead():
+            return "Dead"
+        
         if len(self.foodLocations) <= 0:
             return "isBored"
         
         self.hunger -= 1
         x,y = self.foodLocations[0]
         self.locationXY = (x,y)
+        
         if self.checkFood():
             return "isFood"
         else:
@@ -237,6 +267,8 @@ class Agent:
         elif behaviorKey == "Known":
             setter = self.Known()
         
+        if setter == "Dead":
+            self.end()
         if setter != "continue":
             state = self.currentState.changeState(setter)
             if state is not None:
@@ -262,11 +294,7 @@ class Agent:
             else:
                 print("dead agent; no start state")
         except EndException:
-            None
-            # reward for food, punish for distance
-            # self.gene.cost = np.round((((self.consecutiveFood * const.CONSECUTIVE_FOOD) + (self.food_touched * const.FOOD_INCENTIVE)) - ((self.distance * const.DISTANCEPINCH) + (self.offPath * const.OFFPATHPENALTY))), 2)
-            # if self.food_touched == const.FOOD_NUM:
-                # self.gene.cost += 50
+            self.score = self.home.foodStored - self.worldMap.numFood
     
     def setup(self):
         self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")

@@ -48,6 +48,7 @@ class StateMachine:
         else:
             return None
         
+    # this fuction sometimes has long runtime because of a possible infinte loop
     def createSM(self, phenotype, genotype):
         commandList = phenotype.replace(",", " ").split()
         inCre = 1
@@ -56,18 +57,15 @@ class StateMachine:
         while self.initGetState(commandList[0]) is None:
             commandList.append(commandList.pop(0))
         currState = self.initGetState(commandList[0])
-        commandList.pop(0)
+        holdState = commandList.pop(0)
         
         for command in commandList:
-            if "(" in command and ")" in command:
+            if "(" in command and ")" in command and len(stateStack) != 0:
                 inCre += 1
                 inputType = command[1:-1]
-                if len(stateStack) == 0:
-                    continue
-                else:
-                    toState = stateStack.pop()
+                toState = stateStack.pop()
                 if toState == "Pick":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.PickStates) > 0:
                         state = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
@@ -79,7 +77,7 @@ class StateMachine:
                         state = Pick(inCre)
                         self.PickStates.append(state)
                 elif toState == "Drop":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.DropStates) > 0:
                         state = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
@@ -91,7 +89,7 @@ class StateMachine:
                         state = Drop(inCre)
                         self.DropStates.append(state)
                 elif toState == "Consume":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.ConsumeStates) > 0:
                         state = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
@@ -103,7 +101,7 @@ class StateMachine:
                         state = Consume(inCre)
                         self.ConsumeStates.append(state)
                 elif toState == "Explore":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.ExploreStates) > 0:
                         state = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
@@ -115,7 +113,7 @@ class StateMachine:
                         state = Explore(inCre)
                         self.ExploreStates.append(state)
                 elif toState == "Den":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.DenStates) > 0:
                         state = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
@@ -127,7 +125,7 @@ class StateMachine:
                         state = Den(inCre)
                         self.DenStates.append(state)
                 elif toState == "Known":
-                    if self.currentCodon > len(genotype):
+                    if self.currentCodon >= len(genotype):
                         self.currentCodon = 0
                     if len(self.KnownStates) > 0:
                         state = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
@@ -138,13 +136,91 @@ class StateMachine:
                     else:
                         state = Known(inCre)
                         self.KnownStates.append(state)
+                else:
+                    print(f'Error: unhandled Condition toState:{toState} command:{command}') 
                 currState.inputState(inputType, state)
                 if not state.isFull():
                     fillQueue.append(state)
                 if currState.isFull():
                     currState = fillQueue.pop(0)
-            else:
+            elif "(" not in command and ")" not in command:
                 stateStack.append(command)
+        self.currentCodon = 0
+        commandIncr = 0
+        commandList.insert(0, holdState)
+        while len(fillQueue) > 0 or not currState.isFull():
+            if commandIncr >= len(commandList) - 1:
+                commandIncr = 0
+            else:
+                commandIncr += 1
+            currCommand = commandList[commandIncr] 
+            if "(" in currCommand and ")" in currCommand and len(stateStack) != 0:
+                inCre += 1
+                inputType = currCommand[1:-1]
+                toState = stateStack.pop()
+                if toState == "Pick":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.PickStates) > 0:
+                        state = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Pick(inCre)
+                        self.PickStates.append(state)
+                elif toState == "Drop":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.DropStates) > 0:
+                        state = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Drop(inCre)
+                        self.DropStates.append(state)
+                elif toState == "Consume":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.ConsumeStates) > 0:
+                        state = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Consume(inCre)
+                        self.ConsumeStates.append(state)
+                elif toState == "Explore":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.ExploreStates) > 0:
+                        state = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Explore(inCre)
+                        self.ExploreStates.append(state)
+                elif toState == "Den":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.DenStates) > 0:
+                        state = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Den(inCre)
+                        self.DenStates.append(state)
+                elif toState == "Known":
+                    if self.currentCodon >= len(genotype):
+                        self.currentCodon = 0
+                    if len(self.KnownStates) > 0:
+                        state = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
+                        self.currentCodon += 1
+                    else:
+                        state = Known(inCre)
+                        self.KnownStates.append(state)
+                else:
+                    print(f'Error: unhandled Condition toState:{toState} command:{currCommand}') 
+                currState.inputState(inputType, state)
+                if not state.isFull():
+                    fillQueue.append(state)
+                if currState.isFull():
+                    currState = fillQueue.pop(0)
+            elif "(" not in currCommand and ")" not in currCommand:
+                stateStack.append(currCommand)
                 
     def printSM(self):
         num = 0
