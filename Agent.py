@@ -6,6 +6,7 @@ from copy import deepcopy
 from StateMachine import StateMachine
 from GGraph import GGraph
 from Environment import FoodContainer
+import numpy as np
 
 class Agent:
     def __init__(self, rules, home, worldMap, id='', gene=None) -> None:
@@ -17,9 +18,9 @@ class Agent:
         if gene is None:
             genelist = []
             for x in range(const.GENE_LEN):
-                num = random.randint(-40, 40)
+                num = random.randint(-60, 60)
                 while num == 0:
-                    num = random.randint(-40, 40)
+                    num = random.randint(-60, 60)
                 genelist.append(num)
             self.gene = Gene(genelist)
         else:
@@ -30,10 +31,13 @@ class Agent:
         # state
         self.SM = None
         self.currentState = None
+        self.inputsAvailable = []
+        self.isXCor = True
         # oritation
         self.home = home
         self.worldMap = worldMap
         self.locationXY = None
+        self.direction = None
         # simulation
         self.terminal_functions_run = 0
         self.score = 0
@@ -212,16 +216,30 @@ class Agent:
         if self.should_end():
             self.end()
 
-        self.hunger -= 1
-        x,y = self.home.locationXY
-        self.locationXY = (x,y)
-        self.home.depositFood(self.numFood)
-        self.numFood = 0
+        if self.locationXY != self.home.locationXY:
+            self.direction = tuple(np.subtract(self.home.locationXY, self.locationXY))
+            if self.isXCor:
+                if self.direction[0] > 0:
+                    self.locationXY = (self.locationXY[0] + 1, self.locationXY[1])
+                elif self.direction[0] < 0:
+                    self.locationXY = (self.locationXY[0] - 1, self.locationXY[1])
+                self.isXCor = False
+            else:
+                if self.direction[1] > 0:
+                    self.locationXY = (self.locationXY[0], self.locationXY[1] + 1)
+                elif self.direction[1] < 0:
+                    self.locationXY = (self.locationXY[0], self.locationXY[1] - 1)
+                self.isXCor = True
+            self.hunger -= .5
+            return "continue" 
+        else:
+            self.home.depositFood(self.numFood)
+            self.numFood = 0
         
-        if self.home.isfeed() and self.hunger < 10:
-            self.home.foodStored -= 1
-            self.hunger += 3
-            return "continue"
+            if self.home.isfeed() and self.hunger < 10:
+                self.home.foodStored -= 1
+                self.hunger += 3
+                return "continue"
         if self.isDead():
             return "Dead" 
         else:
@@ -237,9 +255,22 @@ class Agent:
         if len(self.foodLocations) <= 0:
             return "isBored"
         
-        self.hunger -= 1
-        x,y = self.foodLocations[0]
-        self.locationXY = (x,y)
+        if self.locationXY != self.foodLocations[0]:
+            self.direction = tuple(np.subtract(self.foodLocations[0], self.locationXY))
+            if self.isXCor:
+                if self.direction[0] > 0:
+                    self.locationXY = (self.locationXY[0] + 1, self.locationXY[1])
+                elif self.direction[0] < 0:
+                    self.locationXY = (self.locationXY[0] - 1, self.locationXY[1])
+                self.isXCor = False
+            else:
+                if self.direction[1] > 0:
+                    self.locationXY = (self.locationXY[0], self.locationXY[1] + 1)
+                elif self.direction[1] < 0:
+                    self.locationXY = (self.locationXY[0], self.locationXY[1] - 1)
+                self.isXCor = True
+            self.hunger -= .5
+            return "continue" 
         
         if self.checkFood():
             return "isFood"
@@ -268,7 +299,7 @@ class Agent:
             setter = self.Known()
         
         if setter == "Dead":
-            self.end()
+            setter = self.Den()
         if setter != "continue":
             state = self.currentState.changeState(setter)
             if state is not None:
@@ -276,7 +307,7 @@ class Agent:
             
     def generate_SM(self):
         self.SM = StateMachine()
-        self.SM.createSM(self.phenotype, self.gene.genotype)
+        self.SM.createSM(self.phenotype, self.gene.genotype, self.inputsAvailable)
     
     def runAgent(self):
         try:
@@ -285,6 +316,16 @@ class Agent:
             self.locationXY = self.home.locationXY
             if self.phenotype is None:
                 self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")
+                if "isFood" in self.phenotype:
+                    self.inputsAvailable.append("isFood")
+                if "isTired" in self.phenotype:
+                    self.inputsAvailable.append("isTired")
+                if "isHungry" in self.phenotype:
+                    self.inputsAvailable.append("isHungry")
+                if "isBored" in self.phenotype:
+                    self.inputsAvailable.append("isBored")
+                if "isDone" in self.phenotype:
+                    self.inputsAvailable.append("isDone")
             if self.SM is None:
                 self.generate_SM()
             self.currentState = self.SM.getStartState()
