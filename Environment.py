@@ -1,10 +1,31 @@
 from const import ENVIORN_DIM
+import pygame as py
 
 class Environment:
     def __init__(self):
         self.spacesYX = []
         self.numFood = 0
+        self.screen = py.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
+        for y in range(ENVIORN_DIM):
+            newRow = []
+            for x in range(ENVIORN_DIM):
+                newRow.append(None)
+            self.spacesYX.append(newRow)
+    
+    def startAction(self):
+        py.init()
+        self.screen.fill('white')
+        self.screen.blit()
         
+    def updateScreen(self):
+        for row in self.spacesYX:
+            for spot in row:
+                if spot is not None:
+                    if spot.who() == "Food":
+                        py.draw.circle(self.screen, (0, 255, 0, 100), spot.locationXY, 3)
+                    elif spot.who() == "Den":
+                        py.draw.circle(self.screen, (0, 100, 0, 100), spot.locationXY, 12)
+
     def printSpace(self):
         for y in self.spacesYX:
             printStr = ""
@@ -19,13 +40,6 @@ class Environment:
                
     def preBuild(self, locationAndObject):
         None
-    
-    def buildEnvironment(self):
-        for y in range(ENVIORN_DIM):
-            newRow = []
-            for x in range(ENVIORN_DIM):
-                newRow.append(None)
-            self.spacesYX.append(newRow)
             
     def addFood(self, food):
         self.numFood += food
@@ -90,8 +104,9 @@ class Environment:
             self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
     
 class FoodContainer:
-    def __init__(self, food=1):
+    def __init__(self, location, food=1):
         self.foodHere = food
+        self.locationXY = location
     
     def addFood(self):
         self.foodHere += 1

@@ -50,7 +50,10 @@ class StateMachine:
         
     # this fuction sometimes has long runtime because of a possible infinte loop
     def createSM(self, phenotype, genotype, availableInputs):
+        # print(phenotype)
+        # print(availableInputs)
         commandList = phenotype.replace(",", " ").split()
+        # print(commandList)
         inCre = 1
         fillQueue = []
         stateStack = []
@@ -58,8 +61,12 @@ class StateMachine:
             commandList.append(commandList.pop(0))
         currState = self.initGetState(commandList[0], availableInputs)
         holdState = commandList.pop(0)
+        inputNum = 0
+        # print(holdState)
         
         for command in commandList:
+            if "(" in command and ")" in command:
+                inputNum += 1
             if "(" in command and ")" in command and len(stateStack) != 0:
                 inCre += 1
                 inputType = command[1:-1]
@@ -148,81 +155,96 @@ class StateMachine:
         # self.currentCodon = 0
         commandIncr = 0
         commandList.insert(0, holdState)
+        # print(f"bro {inputNum}")
+        bootleg = 0
         while len(fillQueue) > 0 or not currState.isFull():
-            if commandIncr >= len(commandList) - 1:
-                commandIncr = 0
-            else:
-                commandIncr += 1
-            currCommand = commandList[commandIncr] 
-            if "(" in currCommand and ")" in currCommand and len(stateStack) != 0:
-                inCre += 1
-                inputType = currCommand[1:-1]
-                toState = stateStack.pop()
-                if toState == "Pick":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.PickStates) > 0:
-                        state = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Pick(inCre, availableInputs)
-                        self.PickStates.append(state)
-                elif toState == "Drop":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.DropStates) > 0:
-                        state = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Drop(inCre, availableInputs)
-                        self.DropStates.append(state)
-                elif toState == "Consume":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.ConsumeStates) > 0:
-                        state = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Consume(inCre, availableInputs)
-                        self.ConsumeStates.append(state)
-                elif toState == "Explore":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.ExploreStates) > 0:
-                        state = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Explore(inCre, availableInputs)
-                        self.ExploreStates.append(state)
-                elif toState == "Den":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.DenStates) > 0:
-                        state = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Den(inCre, availableInputs)
-                        self.DenStates.append(state)
-                elif toState == "Known":
-                    if self.currentCodon >= len(genotype):
-                        self.currentCodon = 0
-                    if len(self.KnownStates) > 0:
-                        state = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
-                        self.currentCodon += 1
-                    else:
-                        state = Known(inCre, availableInputs)
-                        self.KnownStates.append(state)
+            if (len(stateStack) > 0 or bootleg == 0) and (len(stateStack) > 0 and bootleg == 0):
+                if commandIncr >= len(commandList) - 1:
+                    commandIncr = 0
                 else:
-                    print(f'Error: unhandled Condition toState:{toState} command:{currCommand}') 
-                # print(f"currState: {currState.printName()}  input: {inputType} state: {state.printName()}")
-                currState.inputState(inputType, state)
-                if not state.isFull():
-                    fillQueue.append(state)
-                if currState.isFull() and len(fillQueue) > 0:
-                    # print("pop")
-                    currState = fillQueue.pop(0)
-            elif "(" not in currCommand and ")" not in currCommand:
-                stateStack.append(currCommand)
+                    commandIncr += 1
+                currCommand = commandList[commandIncr]
+                if "(" in currCommand and ")" in currCommand and len(stateStack) != 0:
+                    inCre += 1
+                    inputType = currCommand[1:-1]
+                    toState = stateStack.pop()
+                    if toState == "Pick":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.PickStates) > 0:
+                            state = self.PickStates[genotype[self.currentCodon] % len(self.PickStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Pick(inCre, availableInputs)
+                            self.PickStates.append(state)
+                    elif toState == "Drop":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.DropStates) > 0:
+                            state = self.DropStates[genotype[self.currentCodon] % len(self.DropStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Drop(inCre, availableInputs)
+                            self.DropStates.append(state)
+                    elif toState == "Consume":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.ConsumeStates) > 0:
+                            state = self.ConsumeStates[genotype[self.currentCodon] % len(self.ConsumeStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Consume(inCre, availableInputs)
+                            self.ConsumeStates.append(state)
+                    elif toState == "Explore":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.ExploreStates) > 0:
+                            state = self.ExploreStates[genotype[self.currentCodon] % len(self.ExploreStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Explore(inCre, availableInputs)
+                            self.ExploreStates.append(state)
+                    elif toState == "Den":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.DenStates) > 0:
+                            state = self.DenStates[genotype[self.currentCodon] % len(self.DenStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Den(inCre, availableInputs)
+                            self.DenStates.append(state)
+                    elif toState == "Known":
+                        if self.currentCodon >= len(genotype):
+                            self.currentCodon = 0
+                        if len(self.KnownStates) > 0:
+                            state = self.KnownStates[genotype[self.currentCodon] % len(self.KnownStates)]
+                            self.currentCodon += 1
+                        else:
+                            state = Known(inCre, availableInputs)
+                            self.KnownStates.append(state)
+                    else:
+                        print(f'Error: unhandled Condition toState:{toState} command:{currCommand}') 
+                    # print(f"currState: {currState.printName()}  input: {inputType} state: {state.printName()}")
+                    # print(currState.isFull())
+                    # print(len(stateStack))
+                    currState.inputState(inputType, state)
+                    if not state.isFull():
+                        fillQueue.append(state)
+                    if currState.isFull() and len(fillQueue) > 0:
+                        currState = fillQueue.pop(0)
+                elif "(" not in currCommand and ")" not in currCommand:
+                    stateStack.append(currCommand)
+            else:
+                if len(stateStack) == 0:
+                    bootleg = bootleg + inputNum
+                if commandIncr >= len(commandList) - 1:
+                    commandIncr = 0
+                else:
+                    commandIncr += 1
+                currCommand = commandList[commandIncr]
+                if "(" not in currCommand and ")" not in currCommand:
+                    bootleg -= 1    
+                    stateStack.append(currCommand)
                 
     def printSM(self):
         num = 0
@@ -288,14 +310,21 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
-                
+                edge_labels.append("")
+    
         for state in self.DropStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
@@ -306,14 +335,21 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
-        
+                edge_labels.append("")
+    
         for state in self.ConsumeStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
@@ -324,14 +360,21 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
-                
+                edge_labels.append("")
+    
         for state in self.ExploreStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
@@ -342,14 +385,21 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
-                
+                edge_labels.append("")
+    
         for state in self.DenStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
@@ -360,14 +410,21 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
-                
+                edge_labels.append("")
+    
         for state in self.KnownStates:            
             if state not in beenTo:
                 x,y = state.getLocation()
@@ -378,18 +435,27 @@ class StateMachine:
             for key in state.Outros:
                 currState = state.Outros[key]
                 x1,y1 = currState.getLocation()
+                midpointX = x + ((x1 - x) / 2)
+                midpointY = y + ((y1 - y) / 2)
                 edgex.append(x)
-                edgex.append(x1)
-                edgex.append(None)
                 edgey.append(y)
+                edge_labels.append("")
+                edgex.append(midpointX)
+                edgey.append(midpointY)
+                edge_labels.append(f"{key}")
+                edgex.append(x1)
                 edgey.append(y1)
+                edge_labels.append("")
+                edgex.append(None)
                 edgey.append(None)
-                edge_labels.append(key)
+                edge_labels.append("")
     
         edge_trace = go.Scatter(
             x=edgex, y=edgey,
             mode='lines+text',
-            line=dict(width=0.5, color='#888'),
+            # hoverinfo='text',
+            # hovertext=edge_labels,
+            line=dict(width=0.5),
             marker=dict(symbol="arrow-right"),
             text=edge_labels,
             textposition='middle left'
