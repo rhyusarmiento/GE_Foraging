@@ -27,6 +27,7 @@ class Gene():
         non_terminals = re.findall("<[^>]+>", terminal_string)
         for non_terminal in non_terminals:
                 if gene.current_codon >= len(gene.genotype):
+                    print(len(gene.genotype))
                     gene.current_codon = 0
                     
                 production = rules.find_by_weight(non_terminal, gene.get_codon())
@@ -38,6 +39,7 @@ class Gene():
     # Generates the program/expression represented by the gene i.e. the phenotype.
     def generate_phenotype(self, rules, start_symbol):
         expression = Gene.parse_expression(rules, start_symbol, self, start_symbol)
+        print(expression)
         self.current_codon = 0
         expression = Gene.finish_expression(rules, self, expression)
         return expression

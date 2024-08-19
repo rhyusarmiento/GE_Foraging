@@ -1,4 +1,5 @@
 import random
+from BehaviorTree import BehaviorTree
 from Gene import Gene
 import const as const
 from copy import deepcopy
@@ -7,29 +8,43 @@ from StateMachine import StateMachine
 from GGraph import GGraph
 from Environment import FoodContainer
 import numpy as np
-import pygame as py
+# import pygame as py
 
 class Agent:
-    def __init__(self, rules, home, worldMap, id='', gene=None) -> None:
+    def __init__(self, stateRules, behaviorRules, home, worldMap, id='', stateGene=None, behaviorGene=None) -> None:
         if id == '':
             self.id = f'ID{random.randint(0, 1000)}'
         else:
             self.id = id
         # geno and pheno
-        if gene is None:
+        if stateGene is None:
             genelist = []
             for x in range(const.GENE_LEN):
                 num = random.randint(-60, 60)
                 while num == 0:
                     num = random.randint(-60, 60)
                 genelist.append(num)
-            self.gene = Gene(genelist)
+            self.stateGene = Gene(genelist)
         else:
-            self.gene = deepcopy(gene)
+            self.stateGene = deepcopy(stateGene)
+            
+        if behaviorGene is None:
+            genelist = []
+            for x in range(const.GENE_LEN):
+                num = random.randint(-60, 60)
+                while num == 0:
+                    num = random.randint(-60, 60)
+                genelist.append(num)
+            self.behaviorGene = Gene(genelist)
+        else:
+            self.behaviorGene = deepcopy(behaviorGene)
         
-        self.rules = rules
-        self.phenotype = None
-        # state
+        self.StateRules = stateRules
+        self.StatePhenotype = None
+        self.BehaviorRules = behaviorRules
+        self.BehaviorPhenotype = None
+        # state and behavior
+        self.ExploreTree = None
         self.SM = None
         self.currentState = None
         self.inputsAvailable = []
@@ -43,11 +58,13 @@ class Agent:
         # simulation
         self.terminal_functions_run = 0
         self.score = 0
+        self.running = False
         # Agent Stat
         self.numFood = 0
-        self.hunger = 500
+        self.hunger = const.HUNGER
         self.movement = 0
         self.foodLocations = []
+        self.stateHistory = []
     
     def printID(self):
         print(f"{self.id}ID")
@@ -217,47 +234,147 @@ class Agent:
         if self.checkLoad():
             return "isTried"
         return "isDone"
+
+    def runTreeChildren(self, parent):
+        if parent.Name == "isFood":
+            return parent.Name
+        elif parent.Name == "isBored":
+            return parent.Name
+        elif parent.Name == "ifFood":
+            result = self.checkFood()
+            return self.runTreeChildren(parent.whichChild(result))
+        elif parent.Name == "func2":
+            for x in range(parent.maxChildren):
+                result = self.runTreeChildren(parent.getChild(x))
+                if result == "isFood":
+                    return result
+                elif result == "isBored":
+                    return result
+                elif result == "Dead":
+                    return result
+                elif result == "isHungry":
+                    return result
+                elif result == "isTried":
+                    return result
+        elif parent.Name == "left":
+            return self.left()
+        elif parent.Name == "forward":
+            return self.forward()
+        elif parent.Name == "right":
+            return self.right()
+            
+    def runExploreTree(self):
+        if self.ExploreTree.root.Name is None:
+            print("no tree provided")
+            self.end()
+        else:
+            return self.runTreeChildren(self.ExploreTree.root)
         
     def Explore(self):
         if self.should_end():
             self.end()
-  
-        dir = random.randint(0,3)
+
+        isDone = None
+        while self.running or isDone != "isBored" or isDone != "isFood":
+            isDone = self.runExploreTree()
+            if self.isDead():
+                return "Dead"
+            if self.needFood():
+                return "isHungry"
+            if self.checkLoad():
+                return "isTried"
+            if isDone == "isBored":
+                return isDone
+            if isDone == "isFood":
+                return isDone
+                
+    def left(self):
+        if self.should_end():
+            self.end()
+
         x,y = self.locationXY
-        if dir == 0 and not self.heading == "West":
+        if self.heading == "North":
             self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
             self.hunger -= .5
             self.heading = "West"
-        elif dir == 1 and not self.heading == "East":
+        elif self.heading == "South":
             self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
             self.hunger -= .5
             self.heading = "East"
-        elif dir == 2 and not self.heading == "North":
+        elif self.heading == "East":
             self.hunger -= .5
             self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
             self.heading = "North"
-        elif dir == 3 and not self.heading == "South":
+        elif self.heading == "West":
             self.hunger -= .5
             self.heading = "South"
             self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
-
+            
         if self.isDead():
             return "Dead"
         if self.needFood():
-            self.movement = 0
             return "isHungry"
-        if self.checkFood():
-            self.movement = 0
-            return "isFood"
         if self.checkLoad():
             return "isTried"
-        if self.movement > 500:
-            self.movement = 0
-            return "isBored"
-        else:
-            self.movement += 1
-            return "continue"
         
+    def forward(self):
+        if self.should_end():
+            self.end()
+
+        x,y = self.locationXY
+        if self.heading == "West":
+            self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
+            self.hunger -= .5
+            self.heading = "West"
+        elif self.heading == "East":
+            self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
+            self.hunger -= .5
+            self.heading = "East"
+        elif self.heading == "North":
+            self.hunger -= .5
+            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
+            self.heading = "North"
+        elif self.heading == "South":
+            self.hunger -= .5
+            self.heading = "South"
+            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
+            
+        if self.isDead():
+            return "Dead"
+        if self.needFood():
+            return "isHungry"
+        if self.checkLoad():
+            return "isTried"
+    
+    def right(self):
+        if self.should_end():
+            self.end()
+
+        x,y = self.locationXY
+        if self.heading == "South":
+            self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
+            self.hunger -= .5
+            self.heading = "West"
+        elif self.heading == "North":
+            self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
+            self.hunger -= .5
+            self.heading = "East"
+        elif self.heading == "West":
+            self.hunger -= .5
+            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
+            self.heading = "North"
+        elif self.heading == "East":
+            self.hunger -= .5
+            self.heading = "South"
+            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
+            
+        if self.isDead():
+            return "Dead"
+        if self.needFood():
+            return "isHungry"
+        if self.checkLoad():
+            return "isTried"
+            
     def Den(self):
         if self.should_end():
             self.end()
@@ -331,6 +448,7 @@ class Agent:
 
     def runStateBehavior(self):            
         behaviorKey = self.currentState.behavior()
+        self.stateHistory.append(behaviorKey)
         if behaviorKey == "Pick":
             setter = self.Pick()
         elif behaviorKey == "Drop":
@@ -353,50 +471,63 @@ class Agent:
             
     def generate_SM(self):
         self.SM = StateMachine()
-        self.SM.createSM(self.phenotype, self.gene.genotype, self.inputsAvailable)
+        self.SM.createSM(self.StatePhenotype, self.stateGene.genotype, self.inputsAvailable)
+        
+    def generate_ET(self):
+        self.ExploreTree = BehaviorTree()
+        self.ExploreTree.createBehavior(self.BehaviorPhenotype)
     
     def runAgent(self):
         try:
             self.terminal_functions_run = 0
-            self.gene.current_codon = 0
+            self.behaviorGene.current_codon = 0
+            self.stateGene.current_codon = 0
             self.locationXY = self.home.locationXY
-            if self.phenotype is None:
-                self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")
-                if "(isFood)" in self.phenotype:
+            if self.BehaviorPhenotype is None:
+                self.BehaviorPhenotype = self.behaviorGene.generate_phenotype(self.BehaviorRules, "<start>")            
+            if self.StatePhenotype is None:
+                self.StatePhenotype = self.stateGene.generate_phenotype(self.StateRules, "<start>")
+                if "(isFood)" in self.StatePhenotype:
                     self.inputsAvailable.append("isFood")
-                if "(isTired)" in self.phenotype:
+                if "(isTired)" in self.StatePhenotype:
                     self.inputsAvailable.append("isTired")
-                if "(isHungry)" in self.phenotype:
+                if "(isHungry)" in self.StatePhenotype:
                     self.inputsAvailable.append("isHungry")
-                if "(isBored)" in self.phenotype:
+                if "(isBored)" in self.StatePhenotype:
                     self.inputsAvailable.append("isBored")
-                if "(isDone)" in self.phenotype:
+                if "(isDone)" in self.StatePhenotype:
                     self.inputsAvailable.append("isDone")
             if self.SM is None:
                 self.generate_SM()
+            if self.ExploreTree is None:
+                self.generate_ET()
             self.currentState = self.SM.getStartState()
-            running = True
-            clock = py.time.Clock() 
+            self.running = True
+            # clock = py.time.Clock() 
             if self.currentState is not None:
-                while(running):
-                    py.display.flip()
-                    for event in py.event.get():
-                        if event.type == py.QUIT:
-                            running = False
+                while(self.running):
+                    # py.display.flip()
+                    # for event in py.event.get():
+                    #     if event.type == py.QUIT:
+                    #         running = False
                     self.runStateBehavior()
-                    self.worldMap.updateScreen()
-                    py.draw.rect(self.worldMap.screen, (50,50,50,50), py.Rect(self.locationXY, (10,10)))
-                    clock.tick(60)
-                    py.display.update()
+                    # self.worldMap.updateScreen()
+                    # py.draw.rect(self.worldMap.screen, (50,50,50,50), py.Rect(self.locationXY, (10,10)))
+                    # clock.tick(60)
+                    # py.display.update()
             else:
                 print("dead agent; no start state")
         except EndException:
             self.score = self.home.foodStored - self.worldMap.numFood
     
     def setup(self):
-        self.phenotype = self.gene.generate_phenotype(self.rules, "<start>")
+        self.StatePhenotype = self.gene.generate_phenotype(self.rules, "<start>")
         self.generate_SM()
     
+    def printStateHistory(self):
+        for state in self.stateHistory:
+            print(state)
+        
     def should_end(self):
         self.terminal_functions_run += 1
         if self.terminal_functions_run == 1000:

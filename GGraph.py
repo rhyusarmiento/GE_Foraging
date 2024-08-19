@@ -1,5 +1,5 @@
-from const import RULES
 import re
+from const import EXPLORE_RULES
 
 class GGraph:
     def __init__(self, rules):
@@ -125,7 +125,7 @@ class Node:
         self.inNodes.append(node)
 
 if __name__ == "__main__":
-    ggraph = GGraph(RULES)
+    ggraph = GGraph(EXPLORE_RULES)
     ggraph.printGraph()
     # print(ggraph.find_by_mod('<progs>', 32))
     # print(ggraph.find_by_weight('<code>', 32))
