@@ -1,9 +1,14 @@
-GENE_LEN = 200
 TOTALFOOD = 400
 HUNGER = 300
 
+GENE_LEN = 200
+CROSSOVER_PRODUCTION = 2
+STATEGENE = "stateGene"
+BEHAVIORGENE = "behaviorGene"
+
 ENVIORN_DIM = 50
 DEN_SIZE = 5
+NEIGHBOOR_LIMIT = 5
 
 EXPLORE_RULES = {
     "<start>": ["<start>", "<progs>"],

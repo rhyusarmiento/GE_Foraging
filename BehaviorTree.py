@@ -6,9 +6,10 @@ import random
 from Gene import Gene
 
 class BehaviorTree:
-    def __init__(self):
-        self.root = None
+    def __init__(self, phenotype):
+        commandList = phenotype.replace("(", " ").replace(")", " ").replace(",", " ").split()
         self.currentCommand = 0
+        self.root = self.appendchildren(commandList)
 
     def appendchildren(self, commandList):
         if commandList[self.currentCommand] == "ifFood":
@@ -42,12 +43,7 @@ class BehaviorTree:
         elif commandList[self.currentCommand] == "right":
             node = right()
             self.currentCommand += 1
-            return node
-    
-    def createBehavior(self, phenotype):        
-        commandList = phenotype.replace("(", " ").replace(")", " ").replace(",", " ").split()
-        self.currentCommand = 0
-        self.root = self.appendchildren(commandList)
+            return node       
         
     def printTree(self):    
         stringQueue = []

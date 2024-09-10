@@ -1,6 +1,42 @@
 import re
+import random
+from const import CROSSOVER_PRODUCTION, STATE_RULES, EXPLORE_RULES, GENE_LEN, BEHAVIORGENE, STATEGENE
+from GGraph import GGraph
 
-class Gene():
+class DNAManager:
+    def __init__(self):
+        self.Genes = {}
+        self.stateGraph = GGraph(STATE_RULES)
+        self.behaviorGraph = GGraph(EXPLORE_RULES)
+    
+    def addGene(self, name, gene=None):
+        if gene is None:
+            genelist = []
+            for x in range(GENE_LEN):
+                num = random.randint(-60, 60)
+                while num == 0:
+                    num = random.randint(-60, 60)
+                genelist.append(num)
+            gene = Gene(genelist)
+        self.Genes[name] = gene
+        
+    def getGene(self, name):
+        gene = self.Genes.get(name)
+        if gene is None:
+            self.addGene(name)
+            gene = self.Genes.get(name)
+        return gene
+    
+    def getGenePhenotype(self, name):
+        gene = self.getGene(name)
+        if name == BEHAVIORGENE:
+            return gene.generate_phenotype(self.behaviorGraph, "<start>")
+        elif name == STATEGENE:
+            return gene.generate_phenotype(self.stateGraph, "<start>")
+        else:
+            return None
+        
+class Gene:
     def __init__(self, genotype) -> None:
         self.genotype = genotype
         self.current_codon = 0
@@ -43,6 +79,16 @@ class Gene():
         self.current_codon = 0
         expression = Gene.finish_expression(rules, self, expression)
         return expression
+    
+    def crossoverProduction(self, genotypes):
+        children = []
+        for x in range(CROSSOVER_PRODUCTION * len(genotypes)):
+            newGene = []
+            for y in range(len(genotypes[0])):
+                randGene = random.randint(0, len(genotypes) - 1)
+                newGene.append(genotypes[randGene][y])
+            children.append(Gene(newGene).mutate())
+        return children
  
 # if __name__ == "__main__":
 #     genes = []

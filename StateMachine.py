@@ -49,7 +49,7 @@ class StateMachine:
             return None
         
     # this fuction sometimes has long runtime because of a possible infinte loop
-    def createSM(self, phenotype, genotype, availableInputs):
+    def createStateMachine(self, phenotype, genotype, availableInputs):
         # print(phenotype)
         # print(availableInputs)
         commandList = phenotype.replace(",", " ").split()
@@ -246,7 +246,7 @@ class StateMachine:
                     bootleg -= 1    
                     stateStack.append(currCommand)
                 
-    def printSM(self):
+    def printStateMachine(self):
         num = 0
         for key in self.StartInput:
             print(f'{key}: {self.StartInput[key].printName()}')
