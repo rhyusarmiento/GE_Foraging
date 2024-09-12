@@ -1,6 +1,6 @@
 import re
 import random
-from const import CROSSOVER_PRODUCTION, STATE_RULES, EXPLORE_RULES, GENE_LEN, BEHAVIORGENE, STATEGENE
+from const import STATE_RULES, EXPLORE_RULES, GENE_LEN, EXPLOREGENE, STATEGENE, MUTATION_RATE
 from GGraph import GGraph
 
 class DNAManager:
@@ -29,12 +29,16 @@ class DNAManager:
     
     def getGenePhenotype(self, name):
         gene = self.getGene(name)
-        if name == BEHAVIORGENE:
+        if name == EXPLOREGENE:
             return gene.generate_phenotype(self.behaviorGraph, "<start>")
         elif name == STATEGENE:
             return gene.generate_phenotype(self.stateGraph, "<start>")
         else:
             return None
+        
+    def mutateGenes(self):
+        for key in self.Genes:
+            self.Genes[key].mutate()
         
 class Gene:
     def __init__(self, genotype) -> None:
@@ -80,15 +84,34 @@ class Gene:
         expression = Gene.finish_expression(rules, self, expression)
         return expression
     
-    def crossoverProduction(self, genotypes):
-        children = []
-        for x in range(CROSSOVER_PRODUCTION * len(genotypes)):
-            newGene = []
-            for y in range(len(genotypes[0])):
-                randGene = random.randint(0, len(genotypes) - 1)
-                newGene.append(genotypes[randGene][y])
-            children.append(Gene(newGene).mutate())
-        return children
+    def mutate(self):
+        newGeno = self.genotype.copy()
+        for num in range(len(newGeno)):
+            if num < (len(newGeno) * .2):
+                if random.randint(1,100) > (100 * MUTATION_RATE):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            elif num < (len(newGeno) * .6):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - .1)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            elif num < (len(newGeno) * .8):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - .15)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            else:
+                if random.randint(1,100) > (100 * (MUTATION_RATE - .2)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+        self.genotype = newGeno
  
 # if __name__ == "__main__":
 #     genes = []

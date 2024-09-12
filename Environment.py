@@ -1,6 +1,7 @@
 from const import ENVIORN_DIM, HUNGER
 import pygame as py
 import numpy as np
+import random
 
 class Environment:
     def __init__(self):
@@ -13,6 +14,14 @@ class Environment:
         py.init()
         self.screen.fill('white')
         self.screen.blit()
+        
+    def testSetUp(self):
+        for x in range(ENVIORN_DIM * (ENVIORN_DIM * .25)):
+            self.addNewObject(FoodContainer(self, (random.randint(0, ENVIORN_DIM), random.randint(0, ENVIORN_DIM))))
+            
+    def clearAll(self):
+        self.objects.clear()
+        self.positions.clear()
         
     # def updateScreen(self):
     #     for row in self.spacesYX:
@@ -82,6 +91,7 @@ class Environment:
     #     else:
     #         return False
         
+    # TODO: should not be looking through postition, del operator should handle clean up
     def removeObject(self, object, positions):
         for position in positions:
             self.positions[position].remove(object)
@@ -106,12 +116,11 @@ class Environment:
             return self.positions[cleanLocation]
         return None
     
-# TODO make every other enviroment object an inheritance of the Wrapper
 class ObjectWraper:
     def __init__(self, environment, location):
         self.positions = []
         self.world = environment
-        self.center = location
+        self.center = self.world.cleanCor(location)
         
     def addPosition(self, position):
         self.positions.append(position)
@@ -198,7 +207,7 @@ class AgentBody(ObjectWraper):
         return "Agent"
     
     def getHomeScore(self):
-        return self.home.foodStored - self.getWorldFood()
+        return self.home.foodStored
     
     def checkForAgents(self):
         agentsNear = []

@@ -3,12 +3,16 @@ from BehaviorTree import BehaviorTree
 import const as const
 # import numpy as np
 from StateMachine import StateMachine
-from const import BEHAVIORGENE, STATEGENE
-# import numpy as np
+from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST, TOTALFOOD, ENVIORN_DIM
+from Gene import Gene, DNAManager
+from Environment import Environment, AgentBody, Den
+import numpy as np
 # import pygame as py
 
+# TODO: maybe move known food to body then inherit body
 class AgentMind:
-    def __init__(self, DNAManager, agentBody, id=None):
+    def __init__(self, DNAManager, id=None):
+        super().__init__()
         if id is None:
             self.id = f'ID{random.randint(0, 1000)}'
         else:
@@ -21,21 +25,29 @@ class AgentMind:
         self.ExploreTree = None
         self.StateMachine = None
         self.currentState = None
-        # oritation
-        self.agentBody = agentBody
+        # # oritation
+        self.agentBody = None
         # simulation
         self.terminal_functions_run = 0
         self.score = 0
         self.running = False
-        self.evoTest = False
         # Agent Stat
         self.foodLocations = []
         self.stateHistory = []
         # evolution
         self.memoryAgents = []
-    
+        self.evoLimit = 20
+        self.evoTimer = 0
+        self.isTest = False
+        
     def printID(self):
         print(f"{self.id}")
+        
+    def addBody(self, agentBody):
+        self.agentBody = agentBody
+        
+    def isTesting(self):
+        self.isTest = True
     
     def addFoodLocation(self, location):
         self.foodLocations.append(location)
@@ -258,7 +270,7 @@ class AgentMind:
             self.StateMachine.createStateMachine(self.StatePhenotype, self.DNA.getGene(STATEGENE), inputsAvailable)
         
     def generate_ExploreTree(self):
-        self.BehaviorPhenotype = self.DNA.getGenePhenotype(BEHAVIORGENE)
+        self.BehaviorPhenotype = self.DNA.getGenePhenotype(EXPLOREGENE)
         if self.BehaviorPhenotype is None:
             self.running = False
             print("no Behavior phenotype provided")
@@ -268,6 +280,8 @@ class AgentMind:
     def runAgent(self):
         try:
             self.running = True
+            self.score = 0
+            self.evoTimer = 0
             self.terminal_functions_run = 0
             if self.StateMachine is None:
                 self.generate_StateMachine()
@@ -291,105 +305,117 @@ class AgentMind:
         except EndException:
             self.score = self.agentBody.getHomeScore()
     
-    # def setup(self):
-    #     self.StatePhenotype = self.gene.generate_phenotype(self.rules, "<start>")
-    #     self.generate_StateMachine()
-    
     def printStateHistory(self):
         for state in self.stateHistory:
             print(state)
         
     def should_end(self):
         self.terminal_functions_run += 1
-        if self.terminal_functions_run == 1000:
-            return True
-        return False
+        if self.evoLimit <= self.evoTimer:
+            self.sense()
+            self.actUpdate()
+            self.evoTimer = 0
+        else:
+            self.evoTimer += 1
+        
+        if self.isTest:
+            if self.terminal_functions_run == 200:
+                return True
+            return False
+        else:
+            if self.terminal_functions_run == 1000:
+                return True
+            return False
     
     def end(self):
         raise EndException("End of simulation")
     
     def sense(self):
         self.memoryAgents.clear()
-        self.memoryAgents.extend(self.agentBody.getAgentsNear)     
+        self.memoryAgents.extend(self.agentBody.checkForAgents())     
     
     def novelty_select(self, agents):
-        pass
-        # totalFood = 0
-        # totalConsecu = 0
-        # totalOffPath = 0
-        # totalDistance = 0
-        # for agent in agents:
-        #     totalFood += agent.food_touched
-        #     totalConsecu += agent.consecutiveFood
-        #     totalOffPath += agent.offPath
-        #     totalDistance += agent.distance
-        # totalFood = np.round((totalFood / len(agents)), 2)
-        # totalConsecu = np.round((totalConsecu / len(agents)), 2)
-        # totalOffPath = np.round((totalOffPath / len(agents)), 2)
-        # totalDistance = np.round((totalDistance / len(agents)), 2)
-        # novelAgents = []
-        # for agent in agents:
-        #     if (np.abs(totalFood - agent.food_touched) > totalFood * const.NOVELTY_TOLERANCE_FOOD):
-        #         novelAgents.append(agent)
-        # return novelAgents
+        totalFood = 0
+        for agent in agents:
+            totalFood += agent.score
+        popAverage = np.round((totalFood / len(agents)), 2)
+        novelAgents = []
+        for agent in agents:
+            if (np.abs(popAverage - agent.score) > popAverage * .8):
+                novelAgents.append(agent)
+        return novelAgents
     
-    def novelty_select_OffPath(self, agents):
-        pass
-        # totalOffPath = 0
-        # for agent in agents:
-        #     totalOffPath += agent.offPath
-        # novelAgents = []
-        # if len(agents) > 0:
-        #     totalOffPath = np.round((totalOffPath / len(agents)), 2)
-        #     for agent in agents:
-        #         if (np.abs(totalOffPath - agent.offPath) > totalOffPath * const.NOVELTY_TOLERANCE_OFFPATH):
-        #             novelAgents.append(agent)
-        # return novelAgents
-            # (np.abs(totalDistance - agent.distance) > totalDistance * const.NOVELTY_TOLERANCE)
-            # (np.abs(totalOffPath - agent.offPath) > totalOffPath * const.NOVELTY_TOLERANCE) and
-            # (np.abs(totalFood - agent.food_touched) > totalFood * const.NOVELTY_TOLERANCE)
-            # (np.abs(totalConsecu - agent.consecutiveFood) > totalConsecu * const.NOVELTY_TOLERANCE)
+    def getDNAChildren(self):
+        stateGenes = []
+        exploreGenes = []
+        for agent in self.memorAgents:
+            stateGenes.append(agent.DNA.getGene(STATEGENE).genotype)
+            exploreGenes.append(agent.DNA.getGene(EXPLOREGENE).genotype)
+        
+        stateChildren = []
+        for x in range(CROSSOVER_PRODUCTION * len(stateGenes)):
+            newGene = []
+            for y in range(len(stateGenes[0])):
+                randGene = random.randint(0, len(stateGenes) - 1)
+                newGene.append(stateGenes[randGene][y])
+            stateChildren.append(Gene(newGene).mutate())
             
-    def getStateChildren(self):
-        holdGeno = []
-        for agent in self.memoryAgents:
-            holdGeno.append(agent.stateGene.genotype)
-        return self.stateGene.crossoverProduction(holdGeno)
-    
-    def getBehaviorChildren(self):
-        holdGeno = []
-        for agent in self.memoryAgents:
-            holdGeno.append(agent.behaviorGene.genotype)
-        return self.behaviorGene.crossoverProduction(holdGeno)
+        exploreChildren = []
+        for x in range(CROSSOVER_PRODUCTION * len(exploreGenes)):
+            newGene = []
+            for y in range(len(exploreGenes[0])):
+                randGene = random.randint(0, len(exploreGenes) - 1)
+                newGene.append(exploreGenes[randGene][y])
+            exploreChildren.append(Gene(newGene).mutate())
+            
+        dnaPackets = []
+        for x in range(len(stateChildren)):
+            dna = DNAManager()
+            dna.addGene(STATEGENE, stateChildren[x])
+            dna.addGene(EXPLOREGENE, exploreChildren[x])
+            dnaPackets.append(dna)
+            
+        return dnaPackets
         
     def actUpdate(self):
-        self.projectionresult = 0
-        self.mutateresult = 0
+        # self.projectionresult = 0
+        # self.mutateresult = 0
         self.memoryAgents.append(self)
-        childrenState = self.getStateChildren()
-        childrenBehavior = self.getBehaviorChildren()
-        agents = []
+        childrenDNA = self.getDNAChildren()
+        fakeAgents = []
         incre = 0
-        while(incre < len(childrenBehavior)):
-            # stateRules, behaviorRules, home, worldMap, id='', stateGene=None, behaviorGene=None
-            a = AgentMind(self.stateRules, self.behaviorRules, self.home, self.worldMap, id='testrun', stateGene=childrenState[incre], behaviorGene=childrenBehavior[incre])
-            agents.append(a)
-            a.runTest()
+        while(incre < len(childrenDNA)):
+            a = AgentMind(childrenDNA[incre])
+            fakeAgents.append(a)
             incre += 1
-        novelFoodAgents = self.novelty_select(agents)
-        novelOffPathAgents = self.novelty_select_OffPath(novelFoodAgents)
-        pickme = []
-        for agent in novelOffPathAgents:
-            pickme.append(agent)
-        if len(pickme) > 0:
-            num = random.randint(0, len(pickme) - 1)
-            self.stateGene = pickme[num].stateGene
-            self.projectionresult += 1 
+        self.runChildrenTests(fakeAgents)
+        novelFoodAgents = self.novelty_select(fakeAgents)
+        # update
+        if len(novelFoodAgents) > 0:
+            num = random.randint(0, len(novelFoodAgents) - 1)
+            self.DNA = novelFoodAgents[num].DNA
+            self.generate_StateMachine()
+            self.generate_ExploreTree()
+            # self.projectionresult += 1 
         else:
-            a = AgentMind(self.grid, self.rules, id='testrun', gene=self.stateGene.mutate())
-            a.runAgent()
-            self.stateGene = a.stateGene
-            self.mutateresult += 1
+            self.DNA.mutateGenes()
+            self.generate_StateMachine()
+            self.generate_ExploreTree()
+            # self.mutateresult += 1
+    
+    def runChildrenTests(self, fakeAgents):
+        testEnvironment = Environment()
+        base = Den(testEnvironment, (ENVIORN_DIM // 2, ENVIORN_DIM // 2))
+        
+        for agent in fakeAgents:
+            testEnvironment.testSetUp()
+            agentObject = AgentBody(testEnvironment, base.center, agent, base)
+            agent.addBody(agentObject)
+            testEnvironment.addNewObject(base)
+            testEnvironment.addNewObject(agentObject)
+            agent.isTesting()
+            agent.runAgent()
+            testEnvironment.clearAll()
 
 class EndException(Exception):
     def __init__(self, message):
