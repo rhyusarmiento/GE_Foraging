@@ -267,7 +267,7 @@ class AgentMind:
             if "(isDone)" in self.StatePhenotype:
                 inputsAvailable.append("isDone")
             self.StateMachine = StateMachine() 
-            self.StateMachine.createStateMachine(self.StatePhenotype, self.DNA.getGene(STATEGENE), inputsAvailable)
+            self.StateMachine.createStateMachine(self.StatePhenotype, self.DNA.getGene(STATEGENE).genotype, inputsAvailable)
         
     def generate_ExploreTree(self):
         self.BehaviorPhenotype = self.DNA.getGenePhenotype(EXPLOREGENE)

@@ -16,7 +16,7 @@ class Environment:
         self.screen.blit()
         
     def testSetUp(self):
-        for x in range(ENVIORN_DIM * (ENVIORN_DIM * .25)):
+        for x in range(ENVIORN_DIM * (ENVIORN_DIM // 4)):
             self.addNewObject(FoodContainer(self, (random.randint(0, ENVIORN_DIM), random.randint(0, ENVIORN_DIM))))
             
     def clearAll(self):
@@ -120,7 +120,7 @@ class ObjectWraper:
     def __init__(self, environment, location):
         self.positions = []
         self.world = environment
-        self.center = self.world.cleanCor(location)
+        self.center = (self.world.cleanCor(location[0]), self.world.cleanCor(location[1]))
         
     def addPosition(self, position):
         self.positions.append(position)
