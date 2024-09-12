@@ -1,102 +1,39 @@
-from const import ENVIORN_DIM, NEIGHBOOR_LIMIT, HUNGER
+from const import ENVIORN_DIM, HUNGER
 import pygame as py
 import numpy as np
 
 class Environment:
     def __init__(self):
-        self.playerSpaceYX = []
-        self.spacesYX = []
+        self.objects = set()
+        self.positions = {}
         self.numFood = 0
         self.screen = py.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
-        for y in range(ENVIORN_DIM):
-            newRow = []
-            for x in range(ENVIORN_DIM):
-                newRow.append(None)
-            self.spacesYX.append(newRow)
-        
-        for y in range(ENVIORN_DIM):
-            newRow = []
-            for x in range(ENVIORN_DIM):
-                newRow.append({})
-            self.playerSpaceYX.append(newRow)
     
     def startAction(self):
         py.init()
         self.screen.fill('white')
         self.screen.blit()
         
-    def moveAgentNorth(self, locationXY, agent):
-        self.playerSpaceYX[locationXY[0]][locationXY[1]].pop(agent)
-        newXY = (self.cleanCor(locationXY[0]), self.cleanCor(locationXY[1] + 2))
-        self.playerSpaceYX[newXY[1]][newXY[0]][agent] = agent
+    # def updateScreen(self):
+    #     for row in self.spacesYX:
+    #         for spot in row:
+    #             if spot is not None:
+    #                 if spot.who() == "Food":
+    #                     py.draw.circle(self.screen, (0, 255, 0, 100), spot.locationXY, 3)
+    #                 elif spot.who() == "Den":
+    #                     py.draw.circle(self.screen, (0, 100, 0, 100), spot.locationXY, 12)
 
-    def moveAgentSouth(self, locationXY, agent):
-        self.playerSpaceYX[locationXY[0]][locationXY[1]].pop(agent)
-        newXY = (self.cleanCor(locationXY[0]), self.cleanCor(locationXY[1] - 2))
-        self.playerSpaceYX[newXY[1]][newXY[0]][agent] = agent
-        
-    def moveAgentWest(self, locationXY, agent):
-        self.playerSpaceYX[locationXY[0]][locationXY[1]].pop(agent)
-        newXY = (self.cleanCor(locationXY[0]) - 2, self.cleanCor(locationXY[1]))
-        self.playerSpaceYX[newXY[1]][newXY[0]][agent] = agent
-
-    def moveAgentEast(self, locationXY, agent):
-        self.playerSpaceYX[locationXY[0]][locationXY[1]].pop(agent)
-        newXY = (self.cleanCor(locationXY[0]) + 2, self.cleanCor(locationXY[1]))
-        self.playerSpaceYX[newXY[1]][newXY[0]][agent] = agent
-        
-    def getNearestAgents(self, memory, currAgents):
-        incre = 0
-        while(len(memory) < NEIGHBOOR_LIMIT and len(currAgents) > incre):
-            memory.append(currAgents[incre])
-        
-    def lookAround(self, locationXY):
-        agentsNearMemory = []
-        x,y = locationXY
-        if len(self.playerSpaceYX[y][x].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y][x].keys())
-        elif len(self.playerSpaceYX[y][x + 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y][x + 1].keys())
-        elif len(self.playerSpaceYX[y][x - 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y][x - 1].keys())
-        elif len(self.playerSpaceYX[y - 1][x].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y - 1][x].keys())
-        elif len(self.playerSpaceYX[y + 1][x].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y + 1][x].keys())
-        elif len(self.playerSpaceYX[y + 1][x + 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y + 1][x + 1].keys())
-        elif len(self.playerSpaceYX[y - 1][x + 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y - 1][x + 1].keys())
-        elif len(self.playerSpaceYX[y - 1][x - 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y - 1][x - 1].keys())
-        elif len(self.playerSpaceYX[y + 1][x - 1].keys()) > 0 and len(agentsNearMemory) < NEIGHBOOR_LIMIT:
-            self.getNearestAgents(agentsNearMemory, self.playerSpaceYX[y + 1][x - 1].keys())
-        
-        return agentsNearMemory
-        
-    def updateScreen(self):
-        for row in self.spacesYX:
-            for spot in row:
-                if spot is not None:
-                    if spot.who() == "Food":
-                        py.draw.circle(self.screen, (0, 255, 0, 100), spot.locationXY, 3)
-                    elif spot.who() == "Den":
-                        py.draw.circle(self.screen, (0, 100, 0, 100), spot.locationXY, 12)
-
-    def printSpace(self):
-        for y in self.spacesYX:
-            printStr = ""
-            for x in y:
-                if x is None:
-                    printStr += "o"
-                elif x.who() == "Food":
-                    printStr += "F"
-                elif x.who() == "Den":
-                    printStr += "D"
-            print(printStr)
-               
-    def preBuild(self, locationAndObject):
-        None
+    # def printSpace(self):
+    #     for y in self.spacesYX:
+    #         printStr = ""
+    #         for x in y:
+    #             if x is None:
+    #                 printStr += "o"
+    #             elif x.who() == "Food":
+    #                 printStr += "F"
+    #             elif x.who() == "Den":
+    #                 printStr += "D"
+    #         print(printStr)
             
     def addFood(self, food):
         self.numFood += food
@@ -104,23 +41,33 @@ class Environment:
     def removeFood(self, food):
         self.numFood -= food
             
-    def inputObjectXY(self, location, object):
+    def addNewObject(self, item, location):
+        newObject = item.wrapper
+        newObject.setItemAndLocation(item, location)
+        positions = []
+        radius = item.size // 2
         x,y = location
-        if self.getSpaceYX((x,y)) is None:
-            if object is not None and object.who() == "Food":
-                self.addFood(object.foodHere)
-            self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
-        elif self.getSpaceYX((x,y)).who() == "Food":
-            if object is not None and object.who() == "Food":
-                self.addFood(object.foodHere)
-                self.getSpaceYX((x,y)).addFood()
-            elif object.who() == "Den":
-                self.removeFood(self.getSpaceYX((x,y)).foodHere)
-                self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = object
-        elif self.getSpaceYX((x,y)).who() == "Den":
-            if object is not None and object.who() == "Food":
-                self.addFood(object.foodHere)
-                self.getSpaceYX((x,y)).depositFood(1)
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
+        
+        # get new positions
+        for xCurr in range(xStart + (2 * radius)):
+            for yCurr in range(yStart + (2 * radius)):
+                newPosition = None
+                if item.isFill:
+                    newPosition = (self.cleanCor(xCurr), self.cleanCor(yCurr))
+                elif (xCurr != xStart or xCurr != (xStart + (2 * radius))) and (yCurr != yStart or yCurr != (yStart + (2 * radius))):
+                    newPosition = (self.cleanCor(xCurr), self.cleanCor(yCurr))
+                if newPosition is not None:
+                    positions.append(newPosition)
+        
+        # add new object
+        for newPosition in positions:
+            newObject.addPosition(newPosition)
+            self.positions.setdefault(newPosition, set()).add(newObject)
+        self.objects.add(newObject)
         
     def cleanCor(self, num):
         clean = num
@@ -128,293 +75,293 @@ class Environment:
             clean = (num - ENVIORN_DIM)
         if num < 0:
             clean = (ENVIORN_DIM + num)
-        return clean 
+        return clean
+    
+    # def isPosition(self, newLocation):
+    #     if newLocation in self.positions:
+    #         return True
+    #     else:
+    #         return False
         
-    def inputLargeObjectXY(self, location, radius, object):
-        xcor,ycor = location
-        for y in range(radius):
-            for x in range(radius):
-                self.spacesYX[self.cleanCor(ycor + y)][self.cleanCor(xcor + x)] = object
+    def removeObject(self, object, positions):
+        for position in positions:
+            self.positions[position].remove(object)
+            if len(self.positions[position]) == 0:
+                del self.positions[position]
         
-        for y in range(radius):
-            for x in range(radius):
-                self.spacesYX[self.cleanCor(ycor + y)][self.cleanCor(xcor - x)] = object
+    def addObject(self, object, positions):
+        for position in positions:
+            self.positions.setdefault(position, set()).add(object)
+    
+    def isObjectByLocation(self, location):
+        x,y = location
+        cleanLocation = (self.cleanCor(x), self.cleanCor(y))
+        if cleanLocation in self.positions:
+            return True
+        return False
+    
+    def getObjectsByLocation(self, location):
+        x,y = location
+        cleanLocation = (self.cleanCor(x), self.cleanCor(y))
+        if cleanLocation in self.positions:
+            return self.positions[cleanLocation]
+        return None
+    
+# TODO make every other enviroment object an inheritance of the Wrapper
+class ObjectWraper:
+    def __init__(self, environment):
+        self.positions = []
+        self.world = environment
+        self.center = None
+        self.Item = None
+        
+    def setItemAndLocation(self, item, location):
+        self.item = item
+        self.center = location
+        
+    def who(self):
+        return self.item.who()
+    
+    def addPosition(self, position):
+        self.positions.append(position)
+    
+    def cleanCor(self, num):
+        return self.world.cleanCor(num)
+        
+    def seeLocation(self, location):
+        return self.world.getObjectsByLocation(location)
+        
+    def moveTo(self, newPositions):
+        self.world.removeObject(self, self.positions)
+        self.positions.clear()
+        self.positions.append(newPositions)
+        self.world.addObject(self, self.positions)
+        
+    def moveNorth(self):
+        newPositions = []
+        x,y = self.center
+        self.center = (x, y + 1)
+        for position in self.positions:
+            newPositions.append(position[0], position[1] + 1)
+        
+        self.moveTo(newPositions)
 
-        for y in range(radius):
-            for x in range(radius):
-                self.spacesYX[self.cleanCor(ycor - y)][self.cleanCor(xcor + x)] = object
+    def moveSouth(self):
+        newPositions = []
+        x,y = self.center
+        self.center = (x, y - 1)
+        for position in self.positions:
+            newPositions.append(position[0], position[1] - 1)
         
-        for y in range(radius):
-            for x in range(radius):
-                self.spacesYX[self.cleanCor(ycor - y)][self.cleanCor(xcor - x)] = object
-        # a way to remove large object
+        self.moveTo(newPositions)
         
-    def getSpaceYX(self, location):
-        x,y = location
-        return self.spacesYX[self.cleanCor(y)][self.cleanCor(x)]
-    
-    def removeObjectXY(self, location):
-        x,y = location
-        object = self.getSpaceYX((x,y))
-        if object is not None and object.who() == "Food":
-            self.removeFood(object.foodHere)
-            self.spacesYX[self.cleanCor(y)][self.cleanCor(x)] = None
-    
-class FoodContainer:
-    def __init__(self, location, food=1):
-        self.foodHere = food
-        self.locationXY = location
-    
-    def addFood(self):
-        self.foodHere += 1
-    
-    def who(self):
-        return "Food"
-    
-    def takeFood(self):
-        if self.foodHere <= 0:
-            return False
-        elif self.foodHere > 0:
-            self.foodHere -= 1
-            return True
+    def moveWest(self):
+        newPositions = []
+        x,y = self.center
+        self.center = (x - 1, y)
+        for position in self.positions:
+            newPositions.append(position[0] - 1, position[1])
         
-class Den:
-    def __init__(self, location):
-        self.locationXY = location
-        self.foodStored = 0
-    
-    def who(self):
-        return "Den"
-    
-    def depositFood(self, food):
-        self.foodStored += food
+        self.moveTo(newPositions)
+
+    def moveEast(self):
+        newPositions = []
+        x,y = self.center
+        self.center = (x + 1, y)
+        for position in self.positions:
+            newPositions.append(position[0] + 1, position[1])
         
-    def isfeed(self):
-        if self.foodStored > 0:
-            return True
-        else:
-            return False
+        self.moveTo(newPositions)
+        
+    def getWorldFood(self):
+        return self.world.numFood
+    
+    def removeWorldFood(self, num):
+        self.world.removeFood(num)
+    
+    def removeWorldObject(self, object):
+        self.world.removeObject(object, object.positions)
+        
+    def addWorldObject(self, item):
+        self.world.addNewObject(item, self.center)
 
 class AgentBody:
     # all movement and interface with the environment
-    def __init__(self, agent, environment, base):
-        self.agentBrain = agent
+    def __init__(self, agentMind, base, wrapper):
+        self.agentBrain = agentMind
+        # TODO: decide of home is the wrapper or object 
         self.home = base
-        self.locationXY = self.home.locationXY
-        self.worldMap = environment
-        self.agentSize = 10
+        self.size = 5
+        self.isFill = True
         self.numFood = 0
         self.hunger = HUNGER
-        self.isXCor = True
+        self.isXCorDirection = True
         self.heading = "North"
         self.movement = 0
-    
+        self.wrapper = wrapper
+        self.vision = 5
+            
     def who(self):
         return "Agent"
     
     def getHomeScore(self):
-        return self.home.foodStored - self.worldMap.numFood
+        return self.home.foodStored - self.agentWrapper.getWorldFood()
     
-    def getAgentsNear(self):
-        return self.worldMap.lookAround()
+    def checkForAgents(self):
+        agentsNear = []
+        radius = self.vision // 2
+        x,y = self.agentWrapper.center
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
     
-    def checkFood(self):
-        x,y = self.locationXY
-        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x+1,y))
-            return True
-        if self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y))
-            return True
-        if self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y-1))
-            return True
-        if self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y+1))
-            return True
-        if self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y))
-            return True
-        if self.worldMap.checkSpaceXY((x+1,y+1)) is not None and self.worldMap.checkSpaceXY((x+1,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x+1,y+1))
-            return True
-        if self.worldMap.checkSpaceXY((x+1,y-1)) is not None and self.worldMap.checkSpaceXY((x+1,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x+1,y-1))
-            return True
-        if self.worldMap.checkSpaceXY((x-1,y-1)) is not None and self.worldMap.checkSpaceXY((x-1,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y-1))
-            return True
-        if self.worldMap.checkSpaceXY((x-1,y+1)) is not None and self.worldMap.checkSpaceXY((x-1,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y+1))
-            return True
-        else:
-            return False
+        for xCurr in range(xStart + (2 * radius)):
+            for yCurr in range(yStart + (2 * radius)):
+                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                for object in objects:
+                    if object is not None and object.who() == "Agent":
+                        agentsNear.append(object)
+        return agentsNear
     
+    def checkForFood(self):
+        foodNear = []
+        radius = self.vision // 2
+        x,y = self.agentWrapper.center
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
+    
+        for xCurr in range(xStart + (2 * radius)):
+            for yCurr in range(yStart + (2 * radius)):
+                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                for object in objects:
+                    if object is not None and object.who() == "Food":
+                        foodNear.append(object)
+        return foodNear
+    
+    # picks up all food within vision
     def pick(self):
-        x,y = self.locationXY
-        if self.worldMap.checkSpaceXY((x + 1,y)) is not None and self.worldMap.checkSpaceXY((x + 1,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x + 1,y))
-            if self.worldMap.checkSpaceXY((x + 1,y)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x+1,y))
-        elif self.worldMap.checkSpaceXY((x,y)) is not None and self.worldMap.checkSpaceXY((x,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y))
-            if self.worldMap.checkSpaceXY((x,y)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x,y))
-        elif self.worldMap.checkSpaceXY((x - 1,y)) is not None and self.worldMap.checkSpaceXY((x-1,y)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y))
-            if self.worldMap.checkSpaceXY((x-1,y)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x-1,y))
-        elif self.worldMap.checkSpaceXY((x,y-1)) is not None and self.worldMap.checkSpaceXY((x,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y-1))
-            if self.worldMap.checkSpaceXY((x,y-1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x,y-1))
-        elif self.worldMap.checkSpaceXY((x,y+1)) is not None and self.worldMap.checkSpaceXY((x,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x,y+1))
-            if self.worldMap.checkSpaceXY((x,y+1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x,y+1))
-        elif self.worldMap.checkSpaceXY((x + 1,y+1)) is not None and self.worldMap.checkSpaceXY((x + 1,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x + 1,y+1))
-            if self.worldMap.checkSpaceXY((x + 1,y+1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x+1,y+1))
-        elif self.worldMap.checkSpaceXY((x+1,y-1)) is not None and self.worldMap.checkSpaceXY((x+1,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x+1,y-1))
-            if self.worldMap.checkSpaceXY((x+1,y-1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x+1,y-1))
-        elif self.worldMap.checkSpaceXY((x-1,y-1)) is not None and self.worldMap.checkSpaceXY((x-1,y-1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y-1))
-            if self.worldMap.checkSpaceXY((x-1,y-1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x-1,y-1))
-        elif self.worldMap.checkSpaceXY((x-1,y+1)) is not None and self.worldMap.checkSpaceXY((x-1,y+1)).who() == "Food":
-            self.agentBrain.addFoodLocation((x-1,y+1))
-            if self.worldMap.checkSpaceXY((x-1,y+1)).takeFood():
-                self.numFood += 1
-                self.worldMap.removeFood(1)
-            else:
-                self.worldMap.removeObjectXY((x-1,y+1))
-        
+        radius = self.vision // 2
+        x,y = self.agentWrapper.center
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
+    
+        for xCurr in range(xStart + (2 * radius)):
+            for yCurr in range(yStart + (2 * radius)):
+                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                for object in objects:
+                    if object is not None and object.who() == "Food":
+                        if object.takeFood():
+                            self.numFood += 1
+                            self.agentWrapper.removeWorldFood(1)
+                        else:
+                            self.agentWrapper.removeWorldObject(object)
+                            del object
+            
     def drop(self):
-        if self.numFood > 0:
-            self.numFood -= 1
-            if self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Food":
-                self.worldMap.checkSpaceXY(self.locationXY).addFood()
-            elif self.worldMap.checkSpaceXY(self.locationXY) is not None and self.worldMap.checkSpaceXY(self.locationXY).who() == "Den":
-                self.worldMap.checkSpaceXY(self.locationXY).depositFood(1)
-            else:
-                self.worldMap.inputObjectXY(self.locationXY, FoodContainer())
-        
+        radius = self.vision // 2
+        x,y = self.agentWrapper.center
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
+        dropFood = 1
+    
+        for xCurr in range(xStart + (2 * radius)):
+            if dropFood > 0:
+                for yCurr in range(yStart + (2 * radius)):
+                    objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                    for object in objects:
+                        if object is not None and object.who() == "Food":
+                            object.item.addFood()
+                            dropFood -= 1
+                        elif object.who() == "Den":
+                            object.item.depositFood(1)
+                            dropFood -= 1
+                        else:
+                            newObject = ObjectWraper(self.wrapper.world)
+                            self.agentWrapper.addWorldObject(FoodContainer(newObject))
+                            dropFood -= 1
+            
     def consume(self):
         if self.numFood > 0:
             self.numFood -= 1
             self.hunger += 3
     
     def left(self):
-        x,y = self.locationXY
         if self.heading == "North":
             self.hunger -= .5
             self.heading = "West"
-            self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
-            self.moveAgentWest(self.locationXY, self)
+            self.agentWrapper.moveWest()
         elif self.heading == "South":
             self.hunger -= .5
             self.heading = "East"
-            self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
-            self.moveAgentEast(self.locationXY, self)
+            self.agentWrapper.moveEast()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "North"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
-            self.moveAgentNorth(self.locationXY, self)
+            self.agentWrapper.moveNorth()
         elif self.heading == "West":
             self.hunger -= .5
             self.heading = "South"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
-            self.moveAgentSouth(self.locationXY, self)
+            self.agentWrapper.moveSouth()
     
     def forward(self):
-        x,y = self.locationXY
         if self.heading == "West":
             self.hunger -= .5
             self.heading = "West"
-            self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
-            self.moveAgentWest(self.locationXY, self)
+            self.agentWrapper.moveWest()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "East"
-            self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
-            self.moveAgentEast(self.locationXY, self)
+            self.agentWrapper.moveEast()
         elif self.heading == "North":
             self.hunger -= .5
             self.heading = "North"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
-            self.moveAgentNorth(self.locationXY, self)
+            self.agentWrapper.moveNorth()
         elif self.heading == "South":
             self.hunger -= .5
             self.heading = "South"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
-            self.moveAgentSouth(self.locationXY, self)
+            self.agentWrapper.moveSouth()
     
     def right(self):
-        x,y = self.locationXY
         if self.heading == "South":
             self.hunger -= .5
             self.heading = "West"
-            self.locationXY = (self.worldMap.cleanCor(x-2),self.worldMap.cleanCor(y))
-            self.moveAgentWest(self.locationXY, self)
+            self.agentWrapper.moveWest()
         elif self.heading == "North":
             self.hunger -= .5
             self.heading = "East"
-            self.locationXY = (self.worldMap.cleanCor(x+2),self.worldMap.cleanCor(y))
-            self.moveAgentEast(self.locationXY, self)
+            self.agentWrapper.moveEast()
         elif self.heading == "West":
             self.hunger -= .5
             self.heading = "North"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y+2))
-            self.moveAgentNorth(self.locationXY, self)
+            self.agentWrapper.moveNorth()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "South"
-            self.locationXY = (self.worldMap.cleanCor(x),self.worldMap.cleanCor(y-2))
-            self.moveAgentSouth(self.locationXY, self)
+            self.agentWrapper.moveSouth()
             
     def denGoToo(self):
-        if self.locationXY != self.home.locationXY:
-            self.direction = tuple(np.subtract(self.home.locationXY, self.locationXY))
-            if self.isXCor:
+        currLocation = self.agentWrapper.center
+        if currLocation != self.home.locationXY:
+            self.direction = tuple(np.subtract(self.home.wrapper.center, currLocation))
+            if self.isXCorDirection:
                 if self.direction[0] > 0:
-                    self.locationXY = (self.locationXY[0] + 1, self.locationXY[1])
+                    self.agentWrapper.moveEast()
                 elif self.direction[0] < 0:
-                    self.locationXY = (self.locationXY[0] - 1, self.locationXY[1])
-                self.isXCor = False
+                    self.agentWrapper.moveWest()
+                self.isXCorDirection = False
             else:
                 if self.direction[1] > 0:
-                    self.locationXY = (self.locationXY[0], self.locationXY[1] + 1)
+                    self.agentWrapper.moveNorth()
                 elif self.direction[1] < 0:
-                    self.locationXY = (self.locationXY[0], self.locationXY[1] - 1)
-                self.isXCor = True
+                    self.agentWrapper.moveSouth()
+                self.isXCorDirection = True
             self.hunger -= .5
             return "continue" 
         else:
@@ -429,20 +376,21 @@ class AgentBody:
                 return "isDone"
         
     def known(self):
-        if self.locationXY != self.agentBrain.getKnownFood(0):
-            direction = tuple(np.subtract(self.agentBrain.getKnownFood(0), self.locationXY))
-            if self.isXCor:
-                if direction[0] > 0:
-                    self.locationXY = (self.locationXY[0] + 1, self.locationXY[1])
-                elif direction[0] < 0:
-                    self.locationXY = (self.locationXY[0] - 1, self.locationXY[1])
-                self.isXCor = False
+        currLocation = self.agentWrapper.center
+        if currLocation != self.agentBrain.getKnownFood(0):
+            self.direction = tuple(np.subtract(self.agentBrain.getKnownFood(0), currLocation))
+            if self.isXCorDirection:
+                if self.direction[0] > 0:
+                    self.agentWrapper.moveEast()
+                elif self.direction[0] < 0:
+                    self.agentWrapper.moveWest()
+                self.isXCorDirection = False
             else:
-                if direction[1] > 0:
-                    self.locationXY = (self.locationXY[0], self.locationXY[1] + 1)
-                elif direction[1] < 0:
-                    self.locationXY = (self.locationXY[0], self.locationXY[1] - 1)
-                self.isXCor = True
+                if self.direction[1] > 0:
+                    self.agentWrapper.moveNorth()
+                elif self.direction[1] < 0:
+                    self.agentWrapper.moveSouth()
+                self.isXCorDirection = True
             self.hunger -= .5
             return "continue"
     
@@ -460,6 +408,45 @@ class AgentBody:
     
     def checkLoad(self):
         if self.numFood > 10:
+            return True
+        else:
+            return False
+        
+class FoodContainer:
+    def __init__(self, wrapper, food=1):
+        self.wrapper = wrapper
+        self.foodHere = food
+        self.size = 3
+        self.isFill = True
+    
+    def addFood(self):
+        self.foodHere += 1
+    
+    def who(self):
+        return "Food"
+    
+    def takeFood(self):
+        if self.foodHere <= 0:
+            return False
+        elif self.foodHere > 0:
+            self.foodHere -= 1
+            return True
+        
+class Den:
+    def __init__(self, wrapper):
+        self.size = 15
+        self.isFill = False
+        self.foodStored = 0
+        self.wrapper = wrapper
+    
+    def who(self):
+        return "Den"
+    
+    def depositFood(self, food):
+        self.foodStored += food
+        
+    def isfeed(self):
+        if self.foodStored > 0:
             return True
         else:
             return False
