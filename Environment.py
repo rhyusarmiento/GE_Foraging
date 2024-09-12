@@ -41,12 +41,11 @@ class Environment:
     def removeFood(self, food):
         self.numFood -= food
             
-    def addNewObject(self, item, location):
-        newObject = item.wrapper
-        newObject.setItemAndLocation(item, location)
+    def addNewObject(self, item):
+        newObject = item
         positions = []
         radius = item.size // 2
-        x,y = location
+        x,y = item.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
@@ -109,21 +108,16 @@ class Environment:
     
 # TODO make every other enviroment object an inheritance of the Wrapper
 class ObjectWraper:
-    def __init__(self, environment):
+    def __init__(self, environment, location):
         self.positions = []
         self.world = environment
-        self.center = None
-        self.Item = None
-        
-    def setItemAndLocation(self, item, location):
-        self.item = item
         self.center = location
         
-    def who(self):
-        return self.item.who()
-    
     def addPosition(self, position):
         self.positions.append(position)
+        
+    def who():
+        return "Empty Object"
     
     def cleanCor(self, num):
         return self.world.cleanCor(num)
@@ -183,13 +177,13 @@ class ObjectWraper:
         self.world.removeObject(object, object.positions)
         
     def addWorldObject(self, item):
-        self.world.addNewObject(item, self.center)
+        self.world.addNewObject(item)
 
-class AgentBody:
+class AgentBody(ObjectWraper):
     # all movement and interface with the environment
-    def __init__(self, agentMind, base, wrapper):
+    def __init__(self, environment, location, agentMind, base):
+        super().__init__(environment, location)
         self.agentBrain = agentMind
-        # TODO: decide of home is the wrapper or object 
         self.home = base
         self.size = 5
         self.isFill = True
@@ -198,19 +192,18 @@ class AgentBody:
         self.isXCorDirection = True
         self.heading = "North"
         self.movement = 0
-        self.wrapper = wrapper
         self.vision = 5
             
     def who(self):
         return "Agent"
     
     def getHomeScore(self):
-        return self.home.foodStored - self.agentWrapper.getWorldFood()
+        return self.home.foodStored - self.getWorldFood()
     
     def checkForAgents(self):
         agentsNear = []
         radius = self.vision // 2
-        x,y = self.agentWrapper.center
+        x,y = self.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
@@ -218,7 +211,7 @@ class AgentBody:
     
         for xCurr in range(xStart + (2 * radius)):
             for yCurr in range(yStart + (2 * radius)):
-                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 for object in objects:
                     if object is not None and object.who() == "Agent":
                         agentsNear.append(object)
@@ -227,7 +220,7 @@ class AgentBody:
     def checkForFood(self):
         foodNear = []
         radius = self.vision // 2
-        x,y = self.agentWrapper.center
+        x,y = self.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
@@ -235,7 +228,7 @@ class AgentBody:
     
         for xCurr in range(xStart + (2 * radius)):
             for yCurr in range(yStart + (2 * radius)):
-                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 for object in objects:
                     if object is not None and object.who() == "Food":
                         foodNear.append(object)
@@ -244,7 +237,7 @@ class AgentBody:
     # picks up all food within vision
     def pick(self):
         radius = self.vision // 2
-        x,y = self.agentWrapper.center
+        x,y = self.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
@@ -252,19 +245,19 @@ class AgentBody:
     
         for xCurr in range(xStart + (2 * radius)):
             for yCurr in range(yStart + (2 * radius)):
-                objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 for object in objects:
                     if object is not None and object.who() == "Food":
                         if object.takeFood():
                             self.numFood += 1
-                            self.agentWrapper.removeWorldFood(1)
+                            self.removeWorldFood(1)
                         else:
-                            self.agentWrapper.removeWorldObject(object)
+                            self.removeWorldObject(object)
                             del object
             
     def drop(self):
         radius = self.vision // 2
-        x,y = self.agentWrapper.center
+        x,y = self.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
@@ -274,7 +267,7 @@ class AgentBody:
         for xCurr in range(xStart + (2 * radius)):
             if dropFood > 0:
                 for yCurr in range(yStart + (2 * radius)):
-                    objects = self.agentWrapper.seeLocation((self.agentWrapper.cleanCor(xCurr), self.agentWrapper.cleanCor(yCurr)))
+                    objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                     for object in objects:
                         if object is not None and object.who() == "Food":
                             object.item.addFood()
@@ -283,8 +276,7 @@ class AgentBody:
                             object.item.depositFood(1)
                             dropFood -= 1
                         else:
-                            newObject = ObjectWraper(self.wrapper.world)
-                            self.agentWrapper.addWorldObject(FoodContainer(newObject))
+                            self.addWorldObject(FoodContainer(self.world, self.center))
                             dropFood -= 1
             
     def consume(self):
@@ -296,71 +288,71 @@ class AgentBody:
         if self.heading == "North":
             self.hunger -= .5
             self.heading = "West"
-            self.agentWrapper.moveWest()
+            self.moveWest()
         elif self.heading == "South":
             self.hunger -= .5
             self.heading = "East"
-            self.agentWrapper.moveEast()
+            self.moveEast()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "North"
-            self.agentWrapper.moveNorth()
+            self.moveNorth()
         elif self.heading == "West":
             self.hunger -= .5
             self.heading = "South"
-            self.agentWrapper.moveSouth()
+            self.moveSouth()
     
     def forward(self):
         if self.heading == "West":
             self.hunger -= .5
             self.heading = "West"
-            self.agentWrapper.moveWest()
+            self.moveWest()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "East"
-            self.agentWrapper.moveEast()
+            self.moveEast()
         elif self.heading == "North":
             self.hunger -= .5
             self.heading = "North"
-            self.agentWrapper.moveNorth()
+            self.moveNorth()
         elif self.heading == "South":
             self.hunger -= .5
             self.heading = "South"
-            self.agentWrapper.moveSouth()
+            self.moveSouth()
     
     def right(self):
         if self.heading == "South":
             self.hunger -= .5
             self.heading = "West"
-            self.agentWrapper.moveWest()
+            self.moveWest()
         elif self.heading == "North":
             self.hunger -= .5
             self.heading = "East"
-            self.agentWrapper.moveEast()
+            self.moveEast()
         elif self.heading == "West":
             self.hunger -= .5
             self.heading = "North"
-            self.agentWrapper.moveNorth()
+            self.moveNorth()
         elif self.heading == "East":
             self.hunger -= .5
             self.heading = "South"
-            self.agentWrapper.moveSouth()
+            self.moveSouth()
             
     def denGoToo(self):
-        currLocation = self.agentWrapper.center
-        if currLocation != self.home.locationXY:
-            self.direction = tuple(np.subtract(self.home.wrapper.center, currLocation))
+        currLocation = self.center
+        if currLocation != self.home.center:
+            self.direction = tuple(np.subtract(self.home.center, currLocation))
             if self.isXCorDirection:
                 if self.direction[0] > 0:
-                    self.agentWrapper.moveEast()
+                    self.moveEast()
                 elif self.direction[0] < 0:
-                    self.agentWrapper.moveWest()
+                    self.moveWest()
                 self.isXCorDirection = False
             else:
                 if self.direction[1] > 0:
-                    self.agentWrapper.moveNorth()
+                    self.moveNorth()
                 elif self.direction[1] < 0:
-                    self.agentWrapper.moveSouth()
+                    self.moveSouth()
                 self.isXCorDirection = True
             self.hunger -= .5
             return "continue" 
@@ -376,20 +368,20 @@ class AgentBody:
                 return "isDone"
         
     def known(self):
-        currLocation = self.agentWrapper.center
+        currLocation = self.center
         if currLocation != self.agentBrain.getKnownFood(0):
             self.direction = tuple(np.subtract(self.agentBrain.getKnownFood(0), currLocation))
             if self.isXCorDirection:
                 if self.direction[0] > 0:
-                    self.agentWrapper.moveEast()
+                    self.moveEast()
                 elif self.direction[0] < 0:
-                    self.agentWrapper.moveWest()
+                    self.moveWest()
                 self.isXCorDirection = False
             else:
                 if self.direction[1] > 0:
-                    self.agentWrapper.moveNorth()
+                    self.moveNorth()
                 elif self.direction[1] < 0:
-                    self.agentWrapper.moveSouth()
+                    self.moveSouth()
                 self.isXCorDirection = True
             self.hunger -= .5
             return "continue"
@@ -412,9 +404,9 @@ class AgentBody:
         else:
             return False
         
-class FoodContainer:
-    def __init__(self, wrapper, food=1):
-        self.wrapper = wrapper
+class FoodContainer(ObjectWraper):
+    def __init__(self, environment, location, food=1):
+        super().__init__(environment, location)
         self.foodHere = food
         self.size = 3
         self.isFill = True
@@ -432,12 +424,12 @@ class FoodContainer:
             self.foodHere -= 1
             return True
         
-class Den:
-    def __init__(self, wrapper):
+class Den(ObjectWraper):
+    def __init__(self, environment, location):
+        super().__init__(environment, location)
         self.size = 15
         self.isFill = False
         self.foodStored = 0
-        self.wrapper = wrapper
     
     def who(self):
         return "Den"
