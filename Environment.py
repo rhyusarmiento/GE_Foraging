@@ -12,8 +12,12 @@ class Environment:
     
     def startAction(self):
         py.init()
-        self.screen.fill('white')
+        self.screen.fill('white') # not working 
         self.screen.blit()
+        # sprites
+        # image for surface
+        # display filp
+        
         
     def testSetUp(self):
         for x in range(ENVIORN_DIM * (ENVIORN_DIM // 4)):

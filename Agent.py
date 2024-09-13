@@ -35,7 +35,7 @@ class AgentMind:
         self.stateHistory = []
         # evolution
         self.memoryAgents = []
-        self.evoLimit = 50
+        self.evoLimit = 100
         self.evoTimer = 0
         self.isTest = False
         

@@ -10,18 +10,19 @@ world.testSetUp()
 world.addNewObject(base)
 
 agents = []
-for x in range(100):
+for x in range(3):
     agent = AgentMind(DNAManager(), x)
     agentObject = AgentBody(world, base.center, agent, base)
     agent.addBody(agentObject)
     world.addNewObject(agentObject)
     agents.append(agent)
 
+allscore = []
 for agent in agents:
     agent.runAgent()
-    print(f"score {agent.score}")
+    allscore.append(f"score {agent.score} {agent.id}")
 
-print("jajaj done")
+print(allscore)
 # world.printSpace()
 # # agent.StateMachine.printSM()
 # # agent.StateMachine.display()
