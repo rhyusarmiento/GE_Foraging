@@ -9,7 +9,6 @@ from Environment import Environment, AgentBody, Den
 import numpy as np
 # import pygame as py
 
-# TODO: maybe move known food to body then inherit body
 class AgentMind:
     def __init__(self, DNAManager, id=None):
         super().__init__()
@@ -36,7 +35,7 @@ class AgentMind:
         self.stateHistory = []
         # evolution
         self.memoryAgents = []
-        self.evoLimit = 20
+        self.evoLimit = 50
         self.evoTimer = 0
         self.isTest = False
         
@@ -55,6 +54,7 @@ class AgentMind:
     def getKnownFood(self, spot):
         return self.foodLocations[spot]
         
+    # TODO fix otime
     def Pick(self):
         if self.should_end():
             self.end()
@@ -105,7 +105,10 @@ class AgentMind:
         elif parent.Name == "isBored":
             return parent.Name
         elif parent.Name == "ifFood":
-            result = self.agentBody.checkFood()
+            if self.agentBody.isFoodNear() > 0:
+                result = True
+            else:
+                result = False
             return self.runTreeChildren(parent.whichChild(result))
         elif parent.Name == "func2":
             for x in range(parent.maxChildren):
@@ -215,7 +218,7 @@ class AgentMind:
         elif len(self.foodLocations) > 0:
             return self.agentBody.known()
         
-        if self.agentBody.checkFood():
+        if self.agentBody.isFoodNear() > 0:
             return "isFood"
         else:
             self.foodLocations.pop(0)
@@ -288,6 +291,7 @@ class AgentMind:
             if self.ExploreTree is None:
                 self.generate_ExploreTree()
             self.currentState = self.StateMachine.getStartState()
+            # print("runagent setup done")
             # clock = py.time.Clock() 
             if self.currentState is not None:
                 while(self.running):
@@ -311,19 +315,22 @@ class AgentMind:
         
     def should_end(self):
         self.terminal_functions_run += 1
-        if self.evoLimit <= self.evoTimer:
-            self.sense()
-            self.actUpdate()
-            self.evoTimer = 0
-        else:
-            self.evoTimer += 1
         
         if self.isTest:
-            if self.terminal_functions_run == 200:
+            if self.terminal_functions_run == 50:
                 return True
             return False
         else:
-            if self.terminal_functions_run == 1000:
+            print(f'{self.id} DEATH INCOMEING {self.terminal_functions_run}')
+            if self.evoLimit <= self.evoTimer:
+                print("run Evolution")
+                self.sense()
+                self.actUpdate()
+                print("done")
+                self.evoTimer = 0
+            else:
+                self.evoTimer += 1
+            if self.terminal_functions_run == 500:
                 return True
             return False
     
@@ -332,7 +339,8 @@ class AgentMind:
     
     def sense(self):
         self.memoryAgents.clear()
-        self.memoryAgents.extend(self.agentBody.checkForAgents())     
+        for agentBody in self.agentBody.checkForAgents():
+            self.memoryAgents.append(agentBody.agentBrain)
     
     def novelty_select(self, agents):
         totalFood = 0
@@ -348,12 +356,14 @@ class AgentMind:
     def getDNAChildren(self):
         stateGenes = []
         exploreGenes = []
-        for agent in self.memorAgents:
-            stateGenes.append(agent.DNA.getGene(STATEGENE).genotype)
-            exploreGenes.append(agent.DNA.getGene(EXPLOREGENE).genotype)
+        for agent in self.memoryAgents:
+            currState = agent.DNA.getGene(STATEGENE)
+            currExplore = agent.DNA.getGene(EXPLOREGENE)
+            stateGenes.append(currState.genotype)
+            exploreGenes.append(currExplore.genotype)
         
         stateChildren = []
-        for x in range(CROSSOVER_PRODUCTION * len(stateGenes)):
+        for x in range(CROSSOVER_PRODUCTION):
             newGene = []
             for y in range(len(stateGenes[0])):
                 randGene = random.randint(0, len(stateGenes) - 1)
@@ -361,7 +371,7 @@ class AgentMind:
             stateChildren.append(Gene(newGene).mutate())
             
         exploreChildren = []
-        for x in range(CROSSOVER_PRODUCTION * len(exploreGenes)):
+        for x in range(CROSSOVER_PRODUCTION):
             newGene = []
             for y in range(len(exploreGenes[0])):
                 randGene = random.randint(0, len(exploreGenes) - 1)
@@ -389,6 +399,7 @@ class AgentMind:
             fakeAgents.append(a)
             incre += 1
         self.runChildrenTests(fakeAgents)
+        print("tested")
         novelFoodAgents = self.novelty_select(fakeAgents)
         # update
         if len(novelFoodAgents) > 0:
@@ -408,7 +419,9 @@ class AgentMind:
         base = Den(testEnvironment, (ENVIORN_DIM // 2, ENVIORN_DIM // 2))
         
         for agent in fakeAgents:
-            testEnvironment.testSetUp()
+            print(f"testing {agent.id}")
+            testEnvironment.testSetUp() # takes some time
+            print("setup done") 
             agentObject = AgentBody(testEnvironment, base.center, agent, base)
             agent.addBody(agentObject)
             testEnvironment.addNewObject(base)

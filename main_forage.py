@@ -19,7 +19,9 @@ for x in range(100):
 
 for agent in agents:
     agent.runAgent()
+    print(f"score {agent.score}")
 
+print("jajaj done")
 # world.printSpace()
 # # agent.StateMachine.printSM()
 # # agent.StateMachine.display()

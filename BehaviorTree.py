@@ -119,20 +119,20 @@ class isFood:
     def __init__(self):
         self.Name = "isFood"
         
-if __name__ == "__main__":
-    ggraph = GGraph(EXPLORE_RULES)
-    # ggraph.printGraph()
-    genelist = []
-    behaviorGene = None
-    for x in range(500):
-        num = random.randint(-60, 60)
-        while num == 0:
-            num = random.randint(-60, 60)
-        genelist.append(num)    
-    behaviorGene = Gene(genelist)
-    pheno = behaviorGene.generate_phenotype(ggraph, "<start>")
-    newTree = BehaviorTree()
-    newTree.createBehavior(pheno)
-    newTree.printTree()
+# if __name__ == "__main__":
+    # ggraph = GGraph(EXPLORE_RULES)
+    # # ggraph.printGraph()
+    # genelist = []
+    # behaviorGene = None
+    # for x in range(500):
+    #     num = random.randint(-60, 60)
+    #     while num == 0:
+    #         num = random.randint(-60, 60)
+    #     genelist.append(num)    
+    # behaviorGene = Gene(genelist)
+    # pheno = behaviorGene.generate_phenotype(ggraph, "<start>")
+    # newTree = BehaviorTree()
+    # newTree.createBehavior(pheno)
+    # newTree.printTree()
     # print(ggraph.find_by_mod('<>', 32))
     # print(ggraph.find_by_weight('<code>', 32))

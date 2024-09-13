@@ -23,6 +23,7 @@ class Environment:
         self.objects.clear()
         self.positions.clear()
         
+    # TODO: work on display to see what is happening if happening 
     # def updateScreen(self):
     #     for row in self.spacesYX:
     #         for spot in row:
@@ -61,20 +62,21 @@ class Environment:
         yCurr = yStart
         
         # get new positions
-        for xCurr in range(xStart + (2 * radius)):
-            for yCurr in range(yStart + (2 * radius)):
+        for xCurr in range(xStart + (2 * radius) + 1):
+            for yCurr in range(yStart + (2 * radius) + 1):
                 newPosition = None
                 if item.isFill:
-                    newPosition = (self.cleanCor(xCurr), self.cleanCor(yCurr))
-                elif (xCurr != xStart or xCurr != (xStart + (2 * radius))) and (yCurr != yStart or yCurr != (yStart + (2 * radius))):
-                    newPosition = (self.cleanCor(xCurr), self.cleanCor(yCurr))
+                    newPosition = tuple((self.cleanCor(xCurr), self.cleanCor(yCurr)))
+                elif (xCurr == xStart or xCurr == (xStart + (2 * radius))) and (yCurr == yStart or yCurr == (yStart + (2 * radius))):
+                    newPosition = tuple((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if newPosition is not None:
                     positions.append(newPosition)
         
         # add new object
         for newPosition in positions:
             newObject.addPosition(newPosition)
-            self.positions.setdefault(newPosition, set()).add(newObject)
+            positionSet = self.positions.setdefault(newPosition, set())
+            positionSet.add(newObject)
         self.objects.add(newObject)
         
     def cleanCor(self, num):
@@ -90,17 +92,27 @@ class Environment:
     #         return True
     #     else:
     #         return False
-        
-    # TODO: should not be looking through postition, del operator should handle clean up
-    def removeObject(self, object, positions):
-        for position in positions:
-            self.positions[position].remove(object)
+
+    def removeObjectFromEnviron(self, object, ObjectPositions):
+        # print(f'bang {object}')
+        for position in ObjectPositions:
+            positionSet = self.positions[position]
+            positionSet.remove(object)
             if len(self.positions[position]) == 0:
                 del self.positions[position]
+                
+    def deleteObject(self, object):
+        # print(f'bang {object}')
+        if object in self.objects:
+            self.objects.remove(object)
+            del object
+            # print("dead")
         
-    def addObject(self, object, positions):
-        for position in positions:
-            self.positions.setdefault(position, set()).add(object)
+    def addObject(self, object, objectPositions):
+        self.objects.add(object)
+        for position in objectPositions:
+            positionSet = self.positions.setdefault(position, set())
+            positionSet.add(object)
     
     def isObjectByLocation(self, location):
         x,y = location
@@ -135,9 +147,9 @@ class ObjectWraper:
         return self.world.getObjectsByLocation(location)
         
     def moveTo(self, newPositions):
-        self.world.removeObject(self, self.positions)
+        self.world.removeObjectFromEnviron(self, self.positions)
         self.positions.clear()
-        self.positions.append(newPositions)
+        self.positions.extend(newPositions)
         self.world.addObject(self, self.positions)
         
     def moveNorth(self):
@@ -145,7 +157,7 @@ class ObjectWraper:
         x,y = self.center
         self.center = (x, y + 1)
         for position in self.positions:
-            newPositions.append(position[0], position[1] + 1)
+            newPositions.append(tuple((position[0], position[1] + 1)))
         
         self.moveTo(newPositions)
 
@@ -154,7 +166,7 @@ class ObjectWraper:
         x,y = self.center
         self.center = (x, y - 1)
         for position in self.positions:
-            newPositions.append(position[0], position[1] - 1)
+            newPositions.append(tuple((position[0], position[1] - 1)))
         
         self.moveTo(newPositions)
         
@@ -163,7 +175,7 @@ class ObjectWraper:
         x,y = self.center
         self.center = (x - 1, y)
         for position in self.positions:
-            newPositions.append(position[0] - 1, position[1])
+            newPositions.append(tuple((position[0] - 1, position[1])))
         
         self.moveTo(newPositions)
 
@@ -172,7 +184,7 @@ class ObjectWraper:
         x,y = self.center
         self.center = (x + 1, y)
         for position in self.positions:
-            newPositions.append(position[0] + 1, position[1])
+            newPositions.append(tuple((position[0] + 1, position[1])))
         
         self.moveTo(newPositions)
         
@@ -182,8 +194,8 @@ class ObjectWraper:
     def removeWorldFood(self, num):
         self.world.removeFood(num)
     
-    def removeWorldObject(self, object):
-        self.world.removeObject(object, object.positions)
+    def deleteWorldObject(self, object):
+        self.world.deleteObject(object)
         
     def addWorldObject(self, item):
         self.world.addNewObject(item)
@@ -197,17 +209,22 @@ class AgentBody(ObjectWraper):
         self.size = 5
         self.isFill = True
         self.numFood = 0
+        self.totalFood = 0
         self.hunger = HUNGER
         self.isXCorDirection = True
         self.heading = "North"
         self.movement = 0
         self.vision = 5
             
+    def addFood(self, num):
+        self.numFood += num
+        self.totalFood += num
+      
     def who(self):
         return "Agent"
     
     def getHomeScore(self):
-        return self.home.foodStored
+        return self.totalFood
     
     def checkForAgents(self):
         agentsNear = []
@@ -218,15 +235,35 @@ class AgentBody(ObjectWraper):
         xCurr = xStart
         yCurr = yStart
     
-        for xCurr in range(xStart + (2 * radius)):
-            for yCurr in range(yStart + (2 * radius)):
+        for xCurr in range(xStart + (2 * radius) + 1):
+            for yCurr in range(yStart + (2 * radius) + 1):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 for object in objects:
                     if object is not None and object.who() == "Agent":
                         agentsNear.append(object)
         return agentsNear
     
-    def checkForFood(self):
+    def isFoodNear(self):
+        radius = self.vision // 2
+        x,y = self.center
+        xStart = x - radius
+        yStart = y - radius
+        xCurr = xStart
+        yCurr = yStart
+        isFood = False
+        
+        while isFood is False and xCurr <= xStart + (2 * radius):
+            while isFood is False and yCurr <= yStart + (2 * radius):
+                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
+                for object in objects:
+                    if object is not None and object.who() == "Food":
+                        isFood = True
+                yCurr += 1
+            xCurr += 1
+            
+        return isFood
+    
+    def checkForFooditems(self):
         foodNear = []
         radius = self.vision // 2
         x,y = self.center
@@ -235,58 +272,109 @@ class AgentBody(ObjectWraper):
         xCurr = xStart
         yCurr = yStart
     
-        for xCurr in range(xStart + (2 * radius)):
-            for yCurr in range(yStart + (2 * radius)):
+        for xCurr in range(xStart + (2 * radius) + 1):
+            for yCurr in range(yStart + (2 * radius) + 1):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 for object in objects:
                     if object is not None and object.who() == "Food":
                         foodNear.append(object)
         return foodNear
     
-    # picks up all food within vision
+    def pickFood(self, objects, pickLimit):
+        garbage = set()
+        for object in objects:
+            if object is not None and object.who() == "Food":
+                if object.takeFood():
+                    pickLimit -= 1
+                    self.addFood(1)
+                    self.removeWorldFood(1)
+                else:
+                    garbage.add(object)
+        for item in garbage:
+            # FIX: this is delete multiple of the same object which you cant do 
+            self.deleteWorldObject(item)
+                        
     def pick(self):
-        radius = self.vision // 2
+        visionRadius = self.vision // 2
+        bodyRadius = self.size // 2
         x,y = self.center
-        xStart = x - radius
-        yStart = y - radius
+        xStart = x - visionRadius
+        yStart = y - visionRadius
         xCurr = xStart
         yCurr = yStart
-    
-        for xCurr in range(xStart + (2 * radius)):
-            for yCurr in range(yStart + (2 * radius)):
+        xBodyStart = x - bodyRadius
+        yBodyStart = y - bodyRadius
+        xBodyCurr = xBodyStart
+        yBodyCurr = yBodyStart
+        pickLimit = 1
+        
+        # check core first
+        objects = self.seeLocation((self.cleanCor(x), self.cleanCor(y)))
+        self.pickFood(objects, pickLimit)
+        
+        while pickLimit > 0 and xBodyCurr <= xBodyStart + (2 * bodyRadius):
+            while pickLimit > 0 and yBodyCurr <= yBodyStart + (2 * bodyRadius):
+                objects = self.seeLocation((self.cleanCor(xBodyCurr), self.cleanCor(yBodyCurr)))
+                self.pickFood(objects, pickLimit)
+                yBodyCurr += 1                      
+            xBodyCurr += 1
+        # not body
+        while pickLimit > 0 and (xCurr <= xStart + (2 * visionRadius) and not (xCurr >= xBodyStart and xCurr <= xBodyStart + (2 * bodyRadius))):
+            while pickLimit > 0 and (yCurr <= yStart + (2 * visionRadius) and not (yCurr >= yBodyStart and yCurr <= yBodyStart + (2 * bodyRadius))):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                for object in objects:
-                    if object is not None and object.who() == "Food":
-                        if object.takeFood():
-                            self.numFood += 1
-                            self.removeWorldFood(1)
-                        else:
-                            self.removeWorldObject(object)
-                            del object
-            
+                self.pickFood(objects, pickLimit)
+                yCurr += 1
+            xCurr += 1
+    
+    def dropFood(self, objects, dropLimit):
+        toAdd = []
+        for object in objects:
+            if object is not None and object.who() == "Food":
+                object.addFood()
+                self.numFood -= 1
+                dropLimit -= 1
+            elif object.who() == "Den":
+                object.depositFood(1)
+                self.numFood -= 1
+                dropLimit -= 1
+            else:
+                toAdd.append(FoodContainer(self.world, self.center))
+                self.numFood -= 1
+                dropLimit -= 1
+        for item in toAdd:
+            self.addWorldObject(item)
+    
     def drop(self):
         radius = self.vision // 2
+        bodyRadius = self.size // 2
         x,y = self.center
         xStart = x - radius
         yStart = y - radius
         xCurr = xStart
         yCurr = yStart
-        dropFood = 1
-    
-        for xCurr in range(xStart + (2 * radius)):
-            if dropFood > 0:
-                for yCurr in range(yStart + (2 * radius)):
-                    objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                    for object in objects:
-                        if object is not None and object.who() == "Food":
-                            object.item.addFood()
-                            dropFood -= 1
-                        elif object.who() == "Den":
-                            object.item.depositFood(1)
-                            dropFood -= 1
-                        else:
-                            self.addWorldObject(FoodContainer(self.world, self.center))
-                            dropFood -= 1
+        xBodyStart = x - bodyRadius
+        yBodyStart = y - bodyRadius
+        xBodyCurr = xBodyStart
+        yBodyCurr = yBodyStart
+        dropLimit = 1
+        
+        # check core first
+        objects = self.seeLocation((self.cleanCor(x), self.cleanCor(y)))
+        self.pickFood(objects, dropLimit)
+        
+        while dropLimit > 0 and xBodyCurr <= xBodyStart + (2 * bodyRadius):
+            while dropLimit > 0 and yBodyCurr <= yBodyStart + (2 * bodyRadius):
+                objects = self.seeLocation((self.cleanCor(xBodyCurr), self.cleanCor(yBodyCurr)))
+                self.dropFood(objects, dropLimit)
+                yBodyCurr += 1                      
+            xBodyCurr += 1
+        # not body
+        while dropLimit > 0 and (xCurr <= xStart + (2 * radius) and not (xCurr >= xBodyStart and xCurr <= xBodyStart + (2 * bodyRadius))):
+            while dropLimit > 0 and (yCurr <= yStart + (2 * radius) and not (yCurr >= yBodyStart and yCurr <= yBodyStart + (2 * bodyRadius))):
+                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
+                self.dropFood(objects, dropLimit)
+                yCurr += 1
+            xCurr += 1
             
     def consume(self):
         if self.numFood > 0:

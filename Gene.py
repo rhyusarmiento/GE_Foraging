@@ -79,7 +79,7 @@ class Gene:
     # Generates the program/expression represented by the gene i.e. the phenotype.
     def generate_phenotype(self, rules, start_symbol):
         expression = Gene.parse_expression(rules, start_symbol, self, start_symbol)
-        print(expression)
+        # print(expression)
         self.current_codon = 0
         expression = Gene.finish_expression(rules, self, expression)
         return expression
