@@ -1,4 +1,4 @@
-from const import ENVIORN_DIM, HUNGER
+from const import ENVIORN_DIM, HUNGER, ENVIORNTEST, NEIGHBOOR_LIMIT
 import pygame as py
 import numpy as np
 import random
@@ -8,9 +8,10 @@ class Environment:
         self.objects = set()
         self.positions = {}
         self.numFood = 0
-        self.screen = py.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
+        self.size = ENVIORN_DIM
     
     def startAction(self):
+        self.screen = py.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
         py.init()
         self.screen.fill('white') # not working 
         self.screen.blit()
@@ -18,14 +19,31 @@ class Environment:
         # image for surface
         # display filp
         
-        
+    # TODO: multi thread this function
     def testSetUp(self):
-        for x in range(ENVIORN_DIM * (ENVIORN_DIM // 4)):
-            self.addNewObject(FoodContainer(self, (random.randint(0, ENVIORN_DIM), random.randint(0, ENVIORN_DIM))))
+        self.size = ENVIORNTEST
+        for x in range(self.size * (self.size // 4)):
+            self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
             
-    def clearAll(self):
-        self.objects.clear()
-        self.positions.clear()
+    def testReset(self):
+        garbage = []
+        for object in self.objects:
+            if object.who() == "Agent":
+                garbage.append(object)
+            if object.who() == "Food" and object.foodHere > 1:
+                self.numFood -= object.foodHere
+                garbage.append(object)  
+        
+        for item in garbage:
+            self.removeObject(item)
+        
+        differenceFood = (self.size * (self.size // 4)) - self.numFood
+        if differenceFood > 0:
+            for x in range(differenceFood):
+                self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
+        elif differenceFood < 0:
+            print(f"not good {differenceFood}")
+        
         
     # TODO: work on display to see what is happening if happening 
     # def updateScreen(self):
@@ -64,17 +82,23 @@ class Environment:
         yStart = y - radius
         xCurr = xStart
         yCurr = yStart
-        
+        xEnd = xStart + (2 * radius)
+        yEnd = yStart + (2 * radius)
+        # TODO: location problem adding more spots than needed aka from 0
+        # TODO: Adding masive food list big bug, also mulitiple agents
         # get new positions
-        for xCurr in range(xStart + (2 * radius) + 1):
-            for yCurr in range(yStart + (2 * radius) + 1):
+        while xCurr <= xEnd:
+            while yCurr <= yEnd:
                 newPosition = None
                 if item.isFill:
                     newPosition = tuple((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                elif (xCurr == xStart or xCurr == (xStart + (2 * radius))) and (yCurr == yStart or yCurr == (yStart + (2 * radius))):
+                elif (yCurr == yStart and (xCurr >= xStart and xCurr <= xEnd)) or (yCurr == yEnd and (xCurr >= xStart and xCurr <= xEnd)) or (xCurr == xStart and (yCurr >= yStart and yCurr <= yEnd)) or (xCurr == xEnd and (yCurr >= yStart and yCurr <= yEnd)):
                     newPosition = tuple((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if newPosition is not None:
                     positions.append(newPosition)
+                yCurr += 1
+            yCurr = yStart
+            xCurr += 1
         
         # add new object
         for newPosition in positions:
@@ -85,10 +109,10 @@ class Environment:
         
     def cleanCor(self, num):
         clean = num
-        if num >= ENVIORN_DIM:
-            clean = (num - ENVIORN_DIM)
+        if num >= self.size:
+            clean = (num - self.size)
         if num < 0:
-            clean = (ENVIORN_DIM + num)
+            clean = (self.size + num)
         return clean
     
     # def isPosition(self, newLocation):
@@ -96,22 +120,17 @@ class Environment:
     #         return True
     #     else:
     #         return False
-
-    def removeObjectFromEnviron(self, object, ObjectPositions):
+                
+    def removeObject(self, object):
+        self.objects.remove(object)
         # print(f'bang {object}')
-        for position in ObjectPositions:
+        for position in object.positions:
             positionSet = self.positions[position]
             positionSet.remove(object)
             if len(self.positions[position]) == 0:
                 del self.positions[position]
-                
-    def deleteObject(self, object):
-        # print(f'bang {object}')
-        if object in self.objects:
-            self.objects.remove(object)
-            del object
-            # print("dead")
         
+    # TODO: location problem
     def addObject(self, object, objectPositions):
         self.objects.add(object)
         for position in objectPositions:
@@ -151,7 +170,7 @@ class ObjectWraper:
         return self.world.getObjectsByLocation(location)
         
     def moveTo(self, newPositions):
-        self.world.removeObjectFromEnviron(self, self.positions)
+        self.world.removeObject(self)
         self.positions.clear()
         self.positions.extend(newPositions)
         self.world.addObject(self, self.positions)
@@ -195,11 +214,8 @@ class ObjectWraper:
     def getWorldFood(self):
         return self.world.numFood
     
-    def removeWorldFood(self, num):
-        self.world.removeFood(num)
-    
-    def deleteWorldObject(self, object):
-        self.world.deleteObject(object)
+    def removeWorldObject(self, object):
+        self.world.removeObject(object)
         
     def addWorldObject(self, item):
         self.world.addNewObject(item)
@@ -213,22 +229,24 @@ class AgentBody(ObjectWraper):
         self.size = 5
         self.isFill = True
         self.numFood = 0
-        self.totalFood = 0
+        self.lifetimeFood = 0
         self.hunger = HUNGER
         self.isXCorDirection = True
         self.heading = "North"
         self.movement = 0
         self.vision = 5
+        self.consumedFood = 0
+        self.agentNearLimit = NEIGHBOOR_LIMIT
             
     def addFood(self, num):
         self.numFood += num
-        self.totalFood += num
+        self.lifetimeFood += num
       
     def who(self):
         return "Agent"
     
     def getHomeScore(self):
-        return self.totalFood
+        return self.home.lifetimeFood
     
     def checkForAgents(self):
         agentsNear = []
@@ -238,13 +256,19 @@ class AgentBody(ObjectWraper):
         yStart = y - radius
         xCurr = xStart
         yCurr = yStart
+        limiter = self.agentNearLimit
     
-        for xCurr in range(xStart + (2 * radius) + 1):
-            for yCurr in range(yStart + (2 * radius) + 1):
+        while limiter > 0 and xCurr <= xStart + (2 * radius):
+            while limiter > 0 and yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                for object in objects:
-                    if object is not None and object.who() == "Agent":
-                        agentsNear.append(object)
+                if objects is not None:
+                    for object in objects:
+                        if object.who() == "Agent" and limiter > 0:
+                            agentsNear.append(object)
+                            limiter -= 1
+                yCurr += 1
+            yCurr = yStart
+            xCurr += 1
         return agentsNear
     
     def isFoodNear(self):
@@ -259,10 +283,12 @@ class AgentBody(ObjectWraper):
         while isFood is False and xCurr <= xStart + (2 * radius):
             while isFood is False and yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                for object in objects:
-                    if object is not None and object.who() == "Food":
-                        isFood = True
+                if objects is not None:
+                    for object in objects:
+                        if object.who() == "Food":
+                            isFood = True
                 yCurr += 1
+            yCurr = yStart
             xCurr += 1
             
         return isFood
@@ -276,27 +302,30 @@ class AgentBody(ObjectWraper):
         xCurr = xStart
         yCurr = yStart
     
-        for xCurr in range(xStart + (2 * radius) + 1):
-            for yCurr in range(yStart + (2 * radius) + 1):
+        while xCurr <= xStart + (2 * radius):
+            while yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                for object in objects:
-                    if object is not None and object.who() == "Food":
-                        foodNear.append(object)
+                if objects is not None:    
+                    for object in objects:
+                        if object.who() == "Food":
+                            foodNear.append(object)
+                yCurr += 1
+            yCurr = yStart
+            xCurr += xStart
         return foodNear
     
     def pickFood(self, objects, pickLimit):
         garbage = set()
-        for object in objects:
-            if object is not None and object.who() == "Food":
-                if object.takeFood():
-                    pickLimit -= 1
-                    self.addFood(1)
-                    self.removeWorldFood(1)
-                else:
-                    garbage.add(object)
+        if objects is not None:
+            for object in objects:
+                if object.who() == "Food":
+                    if object.takeFood():
+                        pickLimit -= 1
+                        self.addFood(1)
+                    else:
+                        garbage.add(object)
         for item in garbage:
-            # FIX: this is delete multiple of the same object which you cant do 
-            self.deleteWorldObject(item)
+            self.removeWorldObject(item)
                         
     def pick(self):
         visionRadius = self.vision // 2
@@ -320,7 +349,8 @@ class AgentBody(ObjectWraper):
             while pickLimit > 0 and yBodyCurr <= yBodyStart + (2 * bodyRadius):
                 objects = self.seeLocation((self.cleanCor(xBodyCurr), self.cleanCor(yBodyCurr)))
                 self.pickFood(objects, pickLimit)
-                yBodyCurr += 1                      
+                yBodyCurr += 1 
+            yBodyCurr = yBodyStart                     
             xBodyCurr += 1
         # not body
         while pickLimit > 0 and (xCurr <= xStart + (2 * visionRadius) and not (xCurr >= xBodyStart and xCurr <= xBodyStart + (2 * bodyRadius))):
@@ -328,23 +358,27 @@ class AgentBody(ObjectWraper):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 self.pickFood(objects, pickLimit)
                 yCurr += 1
+            yCurr = yStart
             xCurr += 1
     
     def dropFood(self, objects, dropLimit):
         toAdd = []
-        for object in objects:
-            if object is not None and object.who() == "Food":
-                object.addFood()
-                self.numFood -= 1
-                dropLimit -= 1
-            elif object.who() == "Den":
-                object.depositFood(1)
-                self.numFood -= 1
-                dropLimit -= 1
-            else:
-                toAdd.append(FoodContainer(self.world, self.center))
-                self.numFood -= 1
-                dropLimit -= 1
+        if objects is not None:
+            for object in objects:
+                # TODO: no checks on food
+                if self.numFood > 0:
+                    if object.who() == "Food":
+                        object.addFood()
+                        self.numFood -= 1
+                        dropLimit -= 1
+                    elif object.who() == "Den":
+                        object.depositFood(1)
+                        self.numFood -= 1
+                        dropLimit -= 1
+                    else:
+                        toAdd.append(FoodContainer(self.world, self.center))
+                        self.numFood -= 1
+                        dropLimit -= 1
         for item in toAdd:
             self.addWorldObject(item)
     
@@ -364,13 +398,14 @@ class AgentBody(ObjectWraper):
         
         # check core first
         objects = self.seeLocation((self.cleanCor(x), self.cleanCor(y)))
-        self.pickFood(objects, dropLimit)
+        self.dropFood(objects, dropLimit)
         
         while dropLimit > 0 and xBodyCurr <= xBodyStart + (2 * bodyRadius):
             while dropLimit > 0 and yBodyCurr <= yBodyStart + (2 * bodyRadius):
                 objects = self.seeLocation((self.cleanCor(xBodyCurr), self.cleanCor(yBodyCurr)))
                 self.dropFood(objects, dropLimit)
-                yBodyCurr += 1                      
+                yBodyCurr += 1  
+            yBodyCurr = yBodyStart                    
             xBodyCurr += 1
         # not body
         while dropLimit > 0 and (xCurr <= xStart + (2 * radius) and not (xCurr >= xBodyStart and xCurr <= xBodyStart + (2 * bodyRadius))):
@@ -378,11 +413,13 @@ class AgentBody(ObjectWraper):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 self.dropFood(objects, dropLimit)
                 yCurr += 1
+            yCurr = yStart
             xCurr += 1
             
     def consume(self):
         if self.numFood > 0:
             self.numFood -= 1
+            self.consumedFood += 1
             self.hunger += 3
     
     def left(self):
@@ -460,9 +497,9 @@ class AgentBody(ObjectWraper):
         else:
             self.home.depositFood(self.numFood)
             self.numFood = 0
-        
+            
             if self.home.isfeed() and self.hunger < 10:
-                self.home.foodStored -= 1
+                self.home.eatFood()
                 self.hunger += 3
                 return "continue"
             else:
@@ -511,9 +548,11 @@ class FoodContainer(ObjectWraper):
         self.foodHere = food
         self.size = 3
         self.isFill = True
+        self.world.addFood(food)
     
     def addFood(self):
         self.foodHere += 1
+        self.world.addFood(1)
     
     def who(self):
         return "Food"
@@ -523,6 +562,7 @@ class FoodContainer(ObjectWraper):
             return False
         elif self.foodHere > 0:
             self.foodHere -= 1
+            self.world.removeFood(1)
             return True
         
 class Den(ObjectWraper):
@@ -530,6 +570,7 @@ class Den(ObjectWraper):
         super().__init__(environment, location)
         self.size = 15
         self.isFill = False
+        self.lifetimeFood = 0
         self.foodStored = 0
     
     def who(self):
@@ -537,9 +578,42 @@ class Den(ObjectWraper):
     
     def depositFood(self, food):
         self.foodStored += food
-        
+        self.lifetimeFood += food
+    
+    def eatFood(self):
+        self.foodStored -= 1
+    
+    def testReset(self):
+        self.foodStored = 0    
+    
     def isfeed(self):
         if self.foodStored > 0:
             return True
         else:
             return False
+        
+
+if __name__ == "__main__":
+    envir = Environment()
+    base = Den(envir, (30,30))
+    envir.addNewObject(base)
+    food = None
+    for i in range(1):
+        food = FoodContainer(envir, (random.randint(0, ENVIORN_DIM), random.randint(0, ENVIORN_DIM)))
+        envir.addNewObject(food)
+    
+    envir.removeObject(base)
+    
+    for position in envir.positions:
+        print(f'envir {position} {envir.positions[position]}')
+    
+    for spot in food.positions:
+        print(f'food {spot}')
+    
+    food.moveEast()
+    
+    for position in envir.positions:
+        print(f'envir {position} {envir.positions[position]}')
+    
+    for spot in food.positions:
+        print(f'food {spot}')

@@ -1,13 +1,11 @@
 import random
 from BehaviorTree import BehaviorTree
-import const as const
-# import numpy as np
 from StateMachine import StateMachine
 from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST, TOTALFOOD, ENVIORN_DIM
 from Gene import Gene, DNAManager
 from Environment import Environment, AgentBody, Den
 import numpy as np
-# import pygame as py
+import sys
 
 class AgentMind:
     def __init__(self, DNAManager, id=None):
@@ -54,7 +52,6 @@ class AgentMind:
     def getKnownFood(self, spot):
         return self.foodLocations[spot]
         
-    # TODO fix otime
     def Pick(self):
         if self.should_end():
             self.end()
@@ -321,12 +318,12 @@ class AgentMind:
                 return True
             return False
         else:
-            print(f'{self.id} DEATH INCOMEING {self.terminal_functions_run}')
+            # print(f'{self.id} DEATH INCOMEING {self.terminal_functions_run}')
             if self.evoLimit <= self.evoTimer:
-                print("run Evolution")
+                # print("run Evolution")
                 self.sense()
                 self.actUpdate()
-                print("done")
+                # print("done")
                 self.evoTimer = 0
             else:
                 self.evoTimer += 1
@@ -416,19 +413,18 @@ class AgentMind:
     
     def runChildrenTests(self, fakeAgents):
         testEnvironment = Environment()
-        base = Den(testEnvironment, (ENVIORN_DIM // 2, ENVIORN_DIM // 2))
+        base = Den(testEnvironment, (ENVIORNTEST // 2, ENVIORNTEST // 2))
         
         for agent in fakeAgents:
-            print(f"testing {agent.id}")
-            testEnvironment.testSetUp() # takes some time
-            print("setup done") 
+            base.testReset()
+            testEnvironment.testReset()
+            # maxFood = testEnvironment.numFood
             agentObject = AgentBody(testEnvironment, base.center, agent, base)
             agent.addBody(agentObject)
-            testEnvironment.addNewObject(base)
             testEnvironment.addNewObject(agentObject)
             agent.isTesting()
             agent.runAgent()
-            testEnvironment.clearAll()
+            # print(f'num {agent.agentBody.numFood} agent {agent.agentBody.numFood + agent.agentBody.consumedFood} diff {(agent.agentBody.numFood + agent.agentBody.consumedFood) + testEnvironment.numFood} be? old: {maxFood}; new: {testEnvironment.numFood}')
 
 class EndException(Exception):
     def __init__(self, message):

@@ -3,14 +3,16 @@ from Environment import Environment, FoodContainer, Den, AgentBody
 from Gene import DNAManager
 from const import TOTALFOOD, ENVIORN_DIM
 import random
+import sys
+import multiprocessing
 
 world = Environment()
 base = Den(world, (random.randint(0,ENVIORN_DIM), random.randint(0,ENVIORN_DIM)))
-world.testSetUp()
+world.testReset()
 world.addNewObject(base)
 
 agents = []
-for x in range(3):
+for x in range(20):
     agent = AgentMind(DNAManager(), x)
     agentObject = AgentBody(world, base.center, agent, base)
     agent.addBody(agentObject)
@@ -18,9 +20,17 @@ for x in range(3):
     agents.append(agent)
 
 allscore = []
+threads = []
 for agent in agents:
-    agent.runAgent()
-    allscore.append(f"score {agent.score} {agent.id}")
+    process = multiprocessing.Process(target=agent.runAgent)
+    threads.append(process)
+    process.start()
+    
+for process in threads:
+    process.join()
+    
+for agent in agents:
+    allscore.append(f'agent {agent.id} score {agent.score}')
 
 print(allscore)
 # world.printSpace()

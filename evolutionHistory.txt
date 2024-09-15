@@ -1,1 +1,4 @@
 ['score 1614 0', 'score 26 1', 'score 0 2']
+
+['score 8303 0', 'score 0 1', 'score 0 2', 'score 0 3', 'score 0 4', 'score 0 5', 'score 0 6', 'score 1513 7', 'score 1612 8', 'score 0 9', 'score 0 10', 'score 20026 11', 'score 0 12', 'score 205114 13', 'score 705436 14', 'score 0 15', 'score 4584339 16', 'score 0 17', 'score 14193161 18', 'score 0 19']
+Need to manage my garbage bc its killing my ram
