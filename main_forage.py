@@ -4,7 +4,7 @@ from Gene import DNAManager
 from const import ENVIORN_DIM
 import random
 # import sys
-import multiprocessing
+import threading
 
 if __name__ == '__main__':
     world = Environment()
@@ -23,12 +23,12 @@ if __name__ == '__main__':
     allscore = []
     threads = []
     for agent in agents:
-        process = multiprocessing.Process(target=agent.runAgent)
-        threads.append(process)
-        process.start()
+        thread = threading.Thread(target=agent.runAgent)
+        threads.append(thread)
+        thread.start()
         
-    for process in threads:
-        process.join()
+    for thread in threads:
+        thread.join()
         
     for agent in agents:
         allscore.append(f'agent {agent.id} score {agent.score}')

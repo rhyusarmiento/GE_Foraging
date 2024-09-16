@@ -2,6 +2,9 @@ from const import ENVIORN_DIM, HUNGER, ENVIORNTEST, NEIGHBOOR_LIMIT
 import pygame as py
 import numpy as np
 import random
+import threading
+
+lock = threading.Lock()
 
 class Environment:
     def __init__(self):
@@ -68,10 +71,12 @@ class Environment:
     #         print(printStr)
             
     def addFood(self, food):
-        self.numFood += food
+        with lock:
+            self.numFood += food
             
     def removeFood(self, food):
-        self.numFood -= food
+        with lock:
+            self.numFood -= food
             
     def addNewObject(self, item):
         newObject = item
@@ -122,13 +127,23 @@ class Environment:
     #         return False
                 
     def removeObject(self, object):
-        self.objects.remove(object)
-        # print(f'bang {object}')
-        for position in object.positions:
-            positionSet = self.positions[position]
-            positionSet.remove(object)
-            if len(self.positions[position]) == 0:
-                del self.positions[position]
+        if object.who() != "Agent":
+            with lock:    
+                self.objects.remove(object)
+                # print(f'bang {object}')
+                for position in object.positions:
+                    positionSet = self.positions[position]
+                    positionSet.remove(object)
+                    if len(self.positions[position]) == 0:
+                        del self.positions[position]
+        else:
+            self.objects.remove(object)
+            # print(f'bang {object}')
+            for position in object.positions:
+                positionSet = self.positions[position]
+                positionSet.remove(object)
+                if len(self.positions[position]) == 0:
+                    del self.positions[position]
         
     # TODO: location problem
     def addObject(self, object, objectPositions):
@@ -558,12 +573,13 @@ class FoodContainer(ObjectWraper):
         return "Food"
     
     def takeFood(self):
-        if self.foodHere <= 0:
-            return False
-        elif self.foodHere > 0:
-            self.foodHere -= 1
-            self.world.removeFood(1)
-            return True
+        with lock:
+            if self.foodHere <= 0:
+                return False
+            elif self.foodHere > 0:
+                self.foodHere -= 1
+                self.world.removeFood(1)
+                return True
         
 class Den(ObjectWraper):
     def __init__(self, environment, location):
@@ -577,11 +593,13 @@ class Den(ObjectWraper):
         return "Den"
     
     def depositFood(self, food):
-        self.foodStored += food
-        self.lifetimeFood += food
+        with lock:
+            self.foodStored += food
+            self.lifetimeFood += food
     
     def eatFood(self):
-        self.foodStored -= 1
+        with lock:
+            self.foodStored -= 1
     
     def testReset(self):
         self.foodStored = 0    

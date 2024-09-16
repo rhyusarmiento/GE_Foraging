@@ -245,6 +245,7 @@ class AgentMind:
         if setter == "Dead":
             setter = self.Den()
         if setter != "continue":
+            # print(f"{setter} agent{self.id}")
             state = self.currentState.changeState(setter)
             if state is not None:
                 self.currentState = state
@@ -336,7 +337,9 @@ class AgentMind:
     
     def sense(self):
         self.memoryAgents.clear()
-        for agentBody in self.agentBody.checkForAgents():
+        agents = self.agentBody.checkForAgents()
+        # print(f"{len(agents)} and {self.id}")
+        for agentBody in agents:
             # print(f"I can seeeeee {self.id}")
             self.memoryAgents.append(agentBody.agentBrain)
     
