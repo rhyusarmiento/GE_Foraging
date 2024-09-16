@@ -1,11 +1,11 @@
 import random
 from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
-from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST, TOTALFOOD, ENVIORN_DIM
+from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST
 from Gene import Gene, DNAManager
 from Environment import Environment, AgentBody, Den
 import numpy as np
-import sys
+# import sys
 
 class AgentMind:
     def __init__(self, DNAManager, id=None):
@@ -337,6 +337,7 @@ class AgentMind:
     def sense(self):
         self.memoryAgents.clear()
         for agentBody in self.agentBody.checkForAgents():
+            # print(f"I can seeeeee {self.id}")
             self.memoryAgents.append(agentBody.agentBrain)
     
     def novelty_select(self, agents):
@@ -396,7 +397,6 @@ class AgentMind:
             fakeAgents.append(a)
             incre += 1
         self.runChildrenTests(fakeAgents)
-        print("tested")
         novelFoodAgents = self.novelty_select(fakeAgents)
         # update
         if len(novelFoodAgents) > 0:
