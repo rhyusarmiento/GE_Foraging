@@ -1,10 +1,11 @@
 import random
 from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
-from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST
+from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST, EVO_TIMER
 from Gene import Gene, DNAManager
 from Environment import Environment, AgentBody, Den
 import numpy as np
+import pygame as pyg
 # import sys
 
 class AgentMind:
@@ -290,18 +291,18 @@ class AgentMind:
                 self.generate_ExploreTree()
             self.currentState = self.StateMachine.getStartState()
             # print("runagent setup done")
-            # clock = py.time.Clock() 
+            clock = pyg.time.Clock() 
             if self.currentState is not None:
                 while(self.running):
-                    # py.display.flip()
-                    # for event in py.event.get():
-                    #     if event.type == py.QUIT:
+                    # pyg.display.flip()
+                    # for event in pyg.event.get():
+                    #     if event.type == pyg.QUIT:
                     #         running = False
                     self.runStateBehavior()
                     # self.worldMap.updateScreen()
-                    # py.draw.rect(self.worldMap.screen, (50,50,50,50), py.Rect(self.locationXY, (10,10)))
-                    # clock.tick(60)
-                    # py.display.update()
+                    # pyg.draw.rect(self.worldMap.screen, (50,50,50,50), pyg.Rect(self.locationXY, (10,10)))
+                    pyg.display.filp()
+                    clock.tick(60)
             else:
                 print("dead agent; no start state")
         except EndException:
@@ -315,7 +316,7 @@ class AgentMind:
         self.terminal_functions_run += 1
         
         if self.isTest:
-            if self.terminal_functions_run == 50:
+            if self.terminal_functions_run == EVO_TIMER:
                 return True
             return False
         else:
@@ -328,7 +329,7 @@ class AgentMind:
                 self.evoTimer = 0
             else:
                 self.evoTimer += 1
-            if self.terminal_functions_run == 500:
+            if self.terminal_functions_run == 1000:
                 return True
             return False
     

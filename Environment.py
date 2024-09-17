@@ -1,10 +1,13 @@
 from const import ENVIORN_DIM, HUNGER, ENVIORNTEST, NEIGHBOOR_LIMIT
-import pygame as py
+import pygame as pyg
 import numpy as np
 import random
 import threading
 
-lock = threading.Lock()
+lock_envir = threading.Lock()
+lock_food = threading.Lock()
+lock_den = threading.Lock()
+lock_object = threading.Lock()
 
 class Environment:
     def __init__(self):
@@ -12,12 +15,13 @@ class Environment:
         self.positions = {}
         self.numFood = 0
         self.size = ENVIORN_DIM
+        self.sprites = pyg.sprite.Group()
     
-    def startAction(self):
-        self.screen = py.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
-        py.init()
-        self.screen.fill('white') # not working 
-        self.screen.blit()
+    def startPyGame(self):
+        pyg.init()
+        self.screen = pyg.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
+        self.screen.fill((255, 255, 255))
+        # self.screen.blit()
         # sprites
         # image for surface
         # display filp
@@ -47,37 +51,37 @@ class Environment:
         elif differenceFood < 0:
             print(f"not good {differenceFood}")
         
-        
-    # TODO: work on display to see what is happening if happening 
-    # def updateScreen(self):
-    #     for row in self.spacesYX:
-    #         for spot in row:
-    #             if spot is not None:
-    #                 if spot.who() == "Food":
-    #                     py.draw.circle(self.screen, (0, 255, 0, 100), spot.locationXY, 3)
-    #                 elif spot.who() == "Den":
-    #                     py.draw.circle(self.screen, (0, 100, 0, 100), spot.locationXY, 12)
+    def updateScreen(self):
+        pass
 
-    # def printSpace(self):
-    #     for y in self.spacesYX:
-    #         printStr = ""
-    #         for x in y:
-    #             if x is None:
-    #                 printStr += "o"
-    #             elif x.who() == "Food":
-    #                 printStr += "F"
-    #             elif x.who() == "Den":
-    #                 printStr += "D"
-    #         print(printStr)
+    def printEnvironment(self):
+        pass
             
     def addFood(self, food):
-        with lock:
+        with lock_envir:
             self.numFood += food
             
     def removeFood(self, food):
-        with lock:
+        with lock_envir:
             self.numFood -= food
             
+    def drawObject(self, object):
+        if object.who() == "Den":
+            pyg.draw.lines(self.screen, object.color, object.positions, width=3)
+        elif object.who() == "Agent":
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+        elif object.who() == "Food":
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+
+    # TODO issume of mulitple agents sharing a spot 
+    def eraseObject(self, object):
+        if object.who() == "Den":
+            pyg.draw.lines(self.screen, (255, 255, 255), object.positions, width=3)
+        elif object.who() == "Agent":
+            pyg.draw.rect(self.screen, (255, 255, 255), (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+        elif object.who() == "Food":
+            pyg.draw.rect(self.screen, (255, 255, 255), (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+                    
     def addNewObject(self, item):
         newObject = item
         positions = []
@@ -112,6 +116,8 @@ class Environment:
             positionSet.add(newObject)
         self.objects.add(newObject)
         
+        self.drawObject(newObject)
+        
     def cleanCor(self, num):
         clean = num
         if num >= self.size:
@@ -128,7 +134,7 @@ class Environment:
                 
     def removeObject(self, object):
         if object.who() != "Agent":
-            with lock:    
+            with lock_object:    
                 self.objects.remove(object)
                 # print(f'bang {object}')
                 for position in object.positions:
@@ -235,6 +241,13 @@ class ObjectWraper:
     def addWorldObject(self, item):
         self.world.addNewObject(item)
 
+# class AgentDisplay(pyg.sprite.Sprite):
+#     def __init__(self, color, width, height):
+#         super().__init__()
+#         self.image = pyg.Surface([width, height])
+#         self.image.fill(color)
+#         self.rect = self.image.get_rect()
+
 class AgentBody(ObjectWraper):
     # all movement and interface with the environment
     def __init__(self, environment, location, agentMind, base):
@@ -251,6 +264,7 @@ class AgentBody(ObjectWraper):
         self.movement = 0
         self.vision = 5
         self.consumedFood = 0
+        self.color = (255, 0, 0)
         self.agentNearLimit = NEIGHBOOR_LIMIT
             
     def addFood(self, num):
@@ -277,7 +291,7 @@ class AgentBody(ObjectWraper):
             while limiter > 0 and yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:
-                    for object in objects:
+                    for object in objects.copy():
                         if object.who() == "Agent" and limiter > 0:
                             agentsNear.append(object)
                             limiter -= 1
@@ -299,7 +313,7 @@ class AgentBody(ObjectWraper):
             while isFood is False and yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:
-                    for object in objects:
+                    for object in objects.copy():
                         if object.who() == "Food":
                             isFood = True
                 yCurr += 1
@@ -321,7 +335,7 @@ class AgentBody(ObjectWraper):
             while yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:    
-                    for object in objects:
+                    for object in objects.copy():
                         if object.who() == "Food":
                             foodNear.append(object)
                 yCurr += 1
@@ -332,7 +346,7 @@ class AgentBody(ObjectWraper):
     def pickFood(self, objects, pickLimit):
         garbage = set()
         if objects is not None:
-            for object in objects:
+            for object in objects.copy():
                 if object.who() == "Food":
                     if object.takeFood():
                         pickLimit -= 1
@@ -379,7 +393,7 @@ class AgentBody(ObjectWraper):
     def dropFood(self, objects, dropLimit):
         toAdd = []
         if objects is not None:
-            for object in objects:
+            for object in objects.copy():
                 # TODO: no checks on food
                 if self.numFood > 0:
                     if object.who() == "Food":
@@ -563,6 +577,7 @@ class FoodContainer(ObjectWraper):
         self.foodHere = food
         self.size = 3
         self.isFill = True
+        self.color = (0, 255, 0)
         self.world.addFood(food)
     
     def addFood(self):
@@ -573,11 +588,12 @@ class FoodContainer(ObjectWraper):
         return "Food"
     
     def takeFood(self):
-        with lock:
+        with lock_food:
             if self.foodHere <= 0:
                 return False
             elif self.foodHere > 0:
                 self.foodHere -= 1
+                # requires lock 
                 self.world.removeFood(1)
                 return True
         
@@ -588,17 +604,18 @@ class Den(ObjectWraper):
         self.isFill = False
         self.lifetimeFood = 0
         self.foodStored = 0
+        self.color = (0, 255, 255)
     
     def who(self):
         return "Den"
     
     def depositFood(self, food):
-        with lock:
+        with lock_den:
             self.foodStored += food
             self.lifetimeFood += food
     
     def eatFood(self):
-        with lock:
+        with lock_den:
             self.foodStored -= 1
     
     def testReset(self):

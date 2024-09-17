@@ -13,7 +13,7 @@ if __name__ == '__main__':
     world.addNewObject(base)
 
     agents = []
-    for x in range(20):
+    for x in range(100):
         agent = AgentMind(DNAManager(), x)
         agentObject = AgentBody(world, base.center, agent, base)
         agent.addBody(agentObject)
