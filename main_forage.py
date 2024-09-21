@@ -26,6 +26,9 @@ if __name__ == '__main__':
         thread = threading.Thread(target=agent.runAgent)
         threads.append(thread)
         thread.start()
+    worldThread = threading.Thread(target=world.startPyGame)
+    threads.append(worldThread)
+    worldThread.start()
         
     for thread in threads:
         thread.join()

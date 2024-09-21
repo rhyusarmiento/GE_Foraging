@@ -16,17 +16,48 @@ class Environment:
         self.numFood = 0
         self.size = ENVIORN_DIM
         self.sprites = pyg.sprite.Group()
+        self.rendering = False
     
     def startPyGame(self):
         pyg.init()
         self.screen = pyg.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
         self.screen.fill((255, 255, 255))
-        # self.screen.blit()
-        # sprites
-        # image for surface
-        # display filp
         
-    # TODO: multi thread this function
+        self.rendering = True
+        while(self.rendering):
+            for event in pyg.event.get():
+                if event.type == pyg.QUIT:
+                    self.rendering = False
+                    
+            self.checkAgentDone()
+            
+            self.screen.fill((255, 255, 255))
+            for object in self.objects.copy():
+                self.drawObject(object)
+                
+            pyg.display.flip()
+        
+    def checkAgentDone(self):
+        numAgents = 0
+        numDone = 0
+        for object in self.objects.copy():
+            if object.who() == "Agent":
+                numAgents += 1
+                if object.agentBrain.running is False:
+                    numDone += 1
+        
+        if numAgents == numDone:
+            self.rendering = False
+        
+    def drawObject(self, object):
+        if object.who() == "Den":
+            pyg.draw.lines(self.screen, object.color, True, object.positions, width=3)
+        elif object.who() == "Agent":
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+        elif object.who() == "Food":
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+
+    # TODO: multi thread this function (maybe)
     def testSetUp(self):
         self.size = ENVIORNTEST
         for x in range(self.size * (self.size // 4)):
@@ -50,9 +81,6 @@ class Environment:
                 self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
         elif differenceFood < 0:
             print(f"not good {differenceFood}")
-        
-    def updateScreen(self):
-        pass
 
     def printEnvironment(self):
         pass
@@ -64,24 +92,7 @@ class Environment:
     def removeFood(self, food):
         with lock_envir:
             self.numFood -= food
-            
-    def drawObject(self, object):
-        if object.who() == "Den":
-            pyg.draw.lines(self.screen, object.color, object.positions, width=3)
-        elif object.who() == "Agent":
-            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
-        elif object.who() == "Food":
-            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
-
-    # TODO issume of mulitple agents sharing a spot 
-    def eraseObject(self, object):
-        if object.who() == "Den":
-            pyg.draw.lines(self.screen, (255, 255, 255), object.positions, width=3)
-        elif object.who() == "Agent":
-            pyg.draw.rect(self.screen, (255, 255, 255), (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
-        elif object.who() == "Food":
-            pyg.draw.rect(self.screen, (255, 255, 255), (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
-                    
+                                
     def addNewObject(self, item):
         newObject = item
         positions = []
@@ -115,8 +126,6 @@ class Environment:
             positionSet = self.positions.setdefault(newPosition, set())
             positionSet.add(newObject)
         self.objects.add(newObject)
-        
-        self.drawObject(newObject)
         
     def cleanCor(self, num):
         clean = num

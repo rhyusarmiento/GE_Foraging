@@ -294,14 +294,10 @@ class AgentMind:
             clock = pyg.time.Clock() 
             if self.currentState is not None:
                 while(self.running):
-                    # pyg.display.flip()
-                    # for event in pyg.event.get():
-                    #     if event.type == pyg.QUIT:
-                    #         running = False
+                    for event in pyg.event.get():
+                        if event.type == pyg.QUIT:
+                            self.running = False
                     self.runStateBehavior()
-                    # self.worldMap.updateScreen()
-                    # pyg.draw.rect(self.worldMap.screen, (50,50,50,50), pyg.Rect(self.locationXY, (10,10)))
-                    pyg.display.filp()
                     clock.tick(60)
             else:
                 print("dead agent; no start state")
