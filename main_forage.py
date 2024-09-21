@@ -1,7 +1,7 @@
 from Agent import AgentMind
 from Environment import Environment, Den, AgentBody
 from Gene import DNAManager
-from const import ENVIORN_DIM
+from const import ENVIORN_DIM, NUMAGENTS
 import random
 # import sys
 import threading
@@ -13,30 +13,29 @@ if __name__ == '__main__':
     world.addNewObject(base)
 
     agents = []
-    for x in range(100):
+    for x in range(NUMAGENTS):
         agent = AgentMind(DNAManager(), x)
         agentObject = AgentBody(world, base.center, agent, base)
         agent.addBody(agentObject)
         world.addNewObject(agentObject)
         agents.append(agent)
 
+    print("done")
     allscore = []
     threads = []
     for agent in agents:
         thread = threading.Thread(target=agent.runAgent)
         threads.append(thread)
         thread.start()
-    worldThread = threading.Thread(target=world.startPyGame)
-    threads.append(worldThread)
-    worldThread.start()
-        
+    world.startPyGame()
+    
     for thread in threads:
         thread.join()
         
     for agent in agents:
-        allscore.append(f'agent {agent.id} score {agent.score}')
+        allscore.append(f'agent {agent.id} score {agent.agentBody.lifetimeFood}')
 
-    print(allscore)
+    print(f"{allscore} home lifetime food {base.lifetimeFood}")
 # world.printSpace()
 # # agent.StateMachine.printSM()
 # # agent.StateMachine.display()

@@ -1,4 +1,6 @@
-from const import ENVIORN_DIM, HUNGER, ENVIORNTEST, NEIGHBOOR_LIMIT
+from const import ENVIORN_DIM, ENVIORNTEST, WORLDFILL, DENBORDERSIZE, FOODPERCENT, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE
+from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED
+from const import NORTH, AGENT, FOOD, DEN, WEST, EAST, SOUTH, ISDONE
 import pygame as pyg
 import numpy as np
 import random
@@ -21,7 +23,8 @@ class Environment:
     def startPyGame(self):
         pyg.init()
         self.screen = pyg.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
-        self.screen.fill((255, 255, 255))
+        self.screen.fill(WORLDFILL)
+        clock = pyg.time.Clock() 
         
         self.rendering = True
         while(self.rendering):
@@ -29,53 +32,57 @@ class Environment:
                 if event.type == pyg.QUIT:
                     self.rendering = False
                     
-            self.checkAgentDone()
             
-            self.screen.fill((255, 255, 255))
+            agentlist = []
+            self.screen.fill(WORLDFILL)
             for object in self.objects.copy():
+                if object.who() == AGENT:
+                    agentlist.append(object)
+                else:
+                    self.drawObject(object)
+                    
+            numAgents = 0
+            numDone = 0
+            for object in agentlist:
                 self.drawObject(object)
-                
-            pyg.display.flip()
-        
-    def checkAgentDone(self):
-        numAgents = 0
-        numDone = 0
-        for object in self.objects.copy():
-            if object.who() == "Agent":
                 numAgents += 1
                 if object.agentBrain.running is False:
                     numDone += 1
-        
-        if numAgents == numDone:
-            self.rendering = False
-        
+                
+            # print(f"{numAgents} to done {numDone}")
+            if numAgents == numDone:
+                self.rendering = False
+                
+            pyg.display.flip()
+            clock.tick(30)
+            
     def drawObject(self, object):
-        if object.who() == "Den":
-            pyg.draw.lines(self.screen, object.color, True, object.positions, width=3)
-        elif object.who() == "Agent":
-            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
-        elif object.who() == "Food":
-            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size // 2), (object.size // 2)), width=0)
+        if object.who() == DEN:
+            pyg.draw.lines(self.screen, object.color, False, object.positions, width=DENBORDERSIZE)
+        elif object.who() == AGENT:
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size), (object.size)), width=0)
+        elif object.who() == FOOD:
+            pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size), (object.size)), width=0)
 
     # TODO: multi thread this function (maybe)
     def testSetUp(self):
         self.size = ENVIORNTEST
-        for x in range(self.size * (self.size // 4)):
+        for x in range(self.size * (self.size // FOODPERCENT)):
             self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
             
     def testReset(self):
         garbage = []
         for object in self.objects:
-            if object.who() == "Agent":
+            if object.who() == AGENT:
                 garbage.append(object)
-            if object.who() == "Food" and object.foodHere > 1:
+            if object.who() == FOOD and object.foodHere > 1:
                 self.numFood -= object.foodHere
                 garbage.append(object)  
         
         for item in garbage:
             self.removeObject(item)
         
-        differenceFood = (self.size * (self.size // 4)) - self.numFood
+        differenceFood = (self.size * (self.size // FOODPERCENT)) - self.numFood
         if differenceFood > 0:
             for x in range(differenceFood):
                 self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
@@ -142,15 +149,16 @@ class Environment:
     #         return False
                 
     def removeObject(self, object):
-        if object.who() != "Agent":
+        if object.who() != AGENT:
             with lock_object:    
-                self.objects.remove(object)
-                # print(f'bang {object}')
-                for position in object.positions:
-                    positionSet = self.positions[position]
-                    positionSet.remove(object)
-                    if len(self.positions[position]) == 0:
-                        del self.positions[position]
+                if object in self.objects:
+                    self.objects.remove(object)
+                    # print(f'bang {object}')
+                    for position in object.positions:
+                        positionSet = self.positions[position]
+                        positionSet.remove(object)
+                        if len(self.positions[position]) == 0:
+                            del self.positions[position]
         else:
             self.objects.remove(object)
             # print(f'bang {object}')
@@ -208,36 +216,36 @@ class ObjectWraper:
     def moveNorth(self):
         newPositions = []
         x,y = self.center
-        self.center = (x, y + 1)
+        self.center = (x, y + MOVEMENTSPEED)
         for position in self.positions:
-            newPositions.append(tuple((position[0], position[1] + 1)))
+            newPositions.append(tuple((position[0], position[1] + MOVEMENTSPEED)))
         
         self.moveTo(newPositions)
 
     def moveSouth(self):
         newPositions = []
         x,y = self.center
-        self.center = (x, y - 1)
+        self.center = (x, y - MOVEMENTSPEED)
         for position in self.positions:
-            newPositions.append(tuple((position[0], position[1] - 1)))
+            newPositions.append(tuple((position[0], position[1] - MOVEMENTSPEED)))
         
         self.moveTo(newPositions)
         
     def moveWest(self):
         newPositions = []
         x,y = self.center
-        self.center = (x - 1, y)
+        self.center = (x - MOVEMENTSPEED, y)
         for position in self.positions:
-            newPositions.append(tuple((position[0] - 1, position[1])))
+            newPositions.append(tuple((position[0] - MOVEMENTSPEED, position[1])))
         
         self.moveTo(newPositions)
 
     def moveEast(self):
         newPositions = []
         x,y = self.center
-        self.center = (x + 1, y)
+        self.center = (x + MOVEMENTSPEED, y)
         for position in self.positions:
-            newPositions.append(tuple((position[0] + 1, position[1])))
+            newPositions.append(tuple((position[0] + MOVEMENTSPEED, position[1])))
         
         self.moveTo(newPositions)
         
@@ -263,17 +271,17 @@ class AgentBody(ObjectWraper):
         super().__init__(environment, location)
         self.agentBrain = agentMind
         self.home = base
-        self.size = 5
+        self.size = AGENTSIZE
         self.isFill = True
         self.numFood = 0
         self.lifetimeFood = 0
         self.hunger = HUNGER
         self.isXCorDirection = True
-        self.heading = "North"
+        self.heading = NORTH
         self.movement = 0
-        self.vision = 5
+        self.vision = AGENTSIZE + AGENTVISIONINCREASE
         self.consumedFood = 0
-        self.color = (255, 0, 0)
+        self.color = AGENTCOLOR
         self.agentNearLimit = NEIGHBOOR_LIMIT
             
     def addFood(self, num):
@@ -281,7 +289,7 @@ class AgentBody(ObjectWraper):
         self.lifetimeFood += num
       
     def who(self):
-        return "Agent"
+        return AGENT
     
     def getHomeScore(self):
         return self.home.lifetimeFood
@@ -301,7 +309,7 @@ class AgentBody(ObjectWraper):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:
                     for object in objects.copy():
-                        if object.who() == "Agent" and limiter > 0:
+                        if object.who() == AGENT and limiter > 0:
                             agentsNear.append(object)
                             limiter -= 1
                 yCurr += 1
@@ -323,7 +331,7 @@ class AgentBody(ObjectWraper):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:
                     for object in objects.copy():
-                        if object.who() == "Food":
+                        if object.who() == FOOD:
                             isFood = True
                 yCurr += 1
             yCurr = yStart
@@ -345,7 +353,7 @@ class AgentBody(ObjectWraper):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
                 if objects is not None:    
                     for object in objects.copy():
-                        if object.who() == "Food":
+                        if object.who() == FOOD:
                             foodNear.append(object)
                 yCurr += 1
             yCurr = yStart
@@ -356,7 +364,7 @@ class AgentBody(ObjectWraper):
         garbage = set()
         if objects is not None:
             for object in objects.copy():
-                if object.who() == "Food":
+                if object.who() == FOOD:
                     if object.takeFood():
                         pickLimit -= 1
                         self.addFood(1)
@@ -405,11 +413,11 @@ class AgentBody(ObjectWraper):
             for object in objects.copy():
                 # TODO: no checks on food
                 if self.numFood > 0:
-                    if object.who() == "Food":
+                    if object.who() == FOOD:
                         object.addFood()
                         self.numFood -= 1
                         dropLimit -= 1
-                    elif object.who() == "Den":
+                    elif object.who() == DEN:
                         object.depositFood(1)
                         self.numFood -= 1
                         dropLimit -= 1
@@ -461,57 +469,57 @@ class AgentBody(ObjectWraper):
             self.hunger += 3
     
     def left(self):
-        if self.heading == "North":
+        if self.heading == NORTH:
             self.hunger -= .5
-            self.heading = "West"
+            self.heading = WEST
             self.moveWest()
-        elif self.heading == "South":
+        elif self.heading == SOUTH:
             self.hunger -= .5
-            self.heading = "East"
+            self.heading = EAST
             self.moveEast()
-        elif self.heading == "East":
+        elif self.heading == EAST:
             self.hunger -= .5
-            self.heading = "North"
+            self.heading = NORTH
             self.moveNorth()
-        elif self.heading == "West":
+        elif self.heading == WEST:
             self.hunger -= .5
-            self.heading = "South"
+            self.heading = SOUTH
             self.moveSouth()
     
     def forward(self):
-        if self.heading == "West":
+        if self.heading == WEST:
             self.hunger -= .5
-            self.heading = "West"
+            self.heading = WEST
             self.moveWest()
-        elif self.heading == "East":
+        elif self.heading == EAST:
             self.hunger -= .5
-            self.heading = "East"
+            self.heading = EAST
             self.moveEast()
-        elif self.heading == "North":
+        elif self.heading == NORTH:
             self.hunger -= .5
-            self.heading = "North"
+            self.heading = NORTH
             self.moveNorth()
-        elif self.heading == "South":
+        elif self.heading == SOUTH:
             self.hunger -= .5
-            self.heading = "South"
+            self.heading = SOUTH
             self.moveSouth()
     
     def right(self):
-        if self.heading == "South":
+        if self.heading == SOUTH:
             self.hunger -= .5
-            self.heading = "West"
+            self.heading = WEST
             self.moveWest()
-        elif self.heading == "North":
+        elif self.heading == NORTH:
             self.hunger -= .5
-            self.heading = "East"
+            self.heading = EAST
             self.moveEast()
-        elif self.heading == "West":
+        elif self.heading == WEST:
             self.hunger -= .5
-            self.heading = "North"
+            self.heading = NORTH
             self.moveNorth()
-        elif self.heading == "East":
+        elif self.heading == EAST:
             self.hunger -= .5
-            self.heading = "South"
+            self.heading = SOUTH
             self.moveSouth()
             
     def denGoToo(self):
@@ -541,7 +549,7 @@ class AgentBody(ObjectWraper):
                 self.hunger += 3
                 return "continue"
             else:
-                return "isDone"
+                return ISDONE
         
     def known(self):
         currLocation = self.center
@@ -584,9 +592,9 @@ class FoodContainer(ObjectWraper):
     def __init__(self, environment, location, food=1):
         super().__init__(environment, location)
         self.foodHere = food
-        self.size = 3
+        self.size = FOODSIZE
         self.isFill = True
-        self.color = (0, 255, 0)
+        self.color = FOODCOLOR
         self.world.addFood(food)
     
     def addFood(self):
@@ -594,7 +602,7 @@ class FoodContainer(ObjectWraper):
         self.world.addFood(1)
     
     def who(self):
-        return "Food"
+        return FOOD
     
     def takeFood(self):
         with lock_food:
@@ -609,14 +617,14 @@ class FoodContainer(ObjectWraper):
 class Den(ObjectWraper):
     def __init__(self, environment, location):
         super().__init__(environment, location)
-        self.size = 15
+        self.size = DENSIZE
         self.isFill = False
         self.lifetimeFood = 0
         self.foodStored = 0
-        self.color = (0, 255, 255)
+        self.color = DENCOLOR
     
     def who(self):
-        return "Den"
+        return DEN
     
     def depositFood(self, food):
         with lock_den:

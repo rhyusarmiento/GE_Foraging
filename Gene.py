@@ -1,6 +1,8 @@
 import re
 import random
-from const import STATE_RULES, EXPLORE_RULES, GENE_LEN, EXPLOREGENE, STATEGENE, MUTATION_RATE
+from const import STATE_RULES, EXPLORE_RULES, EXPLOREGENE, STATEGENE
+from const import MUTATION_RATE, MUTATION_FIRSTDECUT, MUTATION_SECONDDECUT, MUTATION_THIRDDECUT
+from const import GENE_LEN, GENE_FIRSTCUT, GENE_SECONDCUT, GENE_THIRDCUT
 from GGraph import GGraph
 
 class DNAManager:
@@ -87,26 +89,26 @@ class Gene:
     def mutate(self):
         newGeno = self.genotype.copy()
         for num in range(len(newGeno)):
-            if num < (len(newGeno) * .2):
+            if num < (len(newGeno) * GENE_FIRSTCUT):
                 if random.randint(1,100) > (100 * MUTATION_RATE):
                     input = random.randint(-40, 40)
                     while input == 0:
                         input = random.randint(-40, 40)
                     newGeno[num] = input
-            elif num < (len(newGeno) * .6):
-                if random.randint(1,100) > (100 * (MUTATION_RATE - .1)):
+            elif num < (len(newGeno) * GENE_SECONDCUT):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_FIRSTDECUT)):
                     input = random.randint(-40, 40)
                     while input == 0:
                         input = random.randint(-40, 40)
                     newGeno[num] = input
-            elif num < (len(newGeno) * .8):
-                if random.randint(1,100) > (100 * (MUTATION_RATE - .15)):
+            elif num < (len(newGeno) * GENE_THIRDCUT):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_SECONDDECUT)):
                     input = random.randint(-40, 40)
                     while input == 0:
                         input = random.randint(-40, 40)
                     newGeno[num] = input
             else:
-                if random.randint(1,100) > (100 * (MUTATION_RATE - .2)):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_THIRDDECUT)):
                     input = random.randint(-40, 40)
                     while input == 0:
                         input = random.randint(-40, 40)

@@ -1,0 +1,32 @@
+Exception in thread Thread-9 (runAgent):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 299, in runAgent
+    self.runStateBehavior()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 242, in runStateBehavior
+    setter = self.Explore()
+             ^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 146, in Explore
+    isDone = self.runExploreTree()
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 138, in runExploreTree
+    return self.runTreeChildren(self.ExploreTree.root)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 131, in runTreeChildren
+    return self.right()
+           ^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 188, in right
+    self.agentBody.right()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 523, in right
+    self.moveSouth()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 232, in moveSouth
+    self.moveTo(newPositions)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 211, in moveTo
+    self.world.removeObject(self)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 166, in removeObject
+    positionSet = self.positions[position]
+                  ~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: (169, 435)

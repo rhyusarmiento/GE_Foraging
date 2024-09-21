@@ -1,7 +1,9 @@
 import random
 from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
-from const import EXPLOREGENE, STATEGENE, CROSSOVER_PRODUCTION, ENVIORNTEST, EVO_TIMER
+from const import DEAD, ISHUNGRY, ISDONE, ISBORED, ISFOOD, ISTIRED, FUNC2
+from const import EXPLOREGENE, STATEGENE, ENVIORNTEST, EVO_TIMER, EVO_LIMIT, TERMINALLIMIT
+from const import NOVELTYSTANDARD, CROSSOVER_PRODUCTION
 from Gene import Gene, DNAManager
 from Environment import Environment, AgentBody, Den
 import numpy as np
@@ -34,7 +36,7 @@ class AgentMind:
         self.stateHistory = []
         # evolution
         self.memoryAgents = []
-        self.evoLimit = 100
+        self.evoLimit = EVO_LIMIT
         self.evoTimer = 0
         self.isTest = False
         
@@ -60,13 +62,13 @@ class AgentMind:
         self.agentBody.pick()
         
         if self.agentBody.isDead():
-            return "Dead"  
+            return DEAD  
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
         else:
-            return "isDone"
+            return ISDONE
         
     def Drop(self):
         if self.should_end():
@@ -75,13 +77,13 @@ class AgentMind:
         self.agentBody.drop()
         
         if self.agentBody.isDead():
-            return "Dead" 
+            return DEAD 
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
         else:
-            return "isDone"
+            return ISDONE
         
     def Consume(self):
         if self.should_end():
@@ -90,17 +92,17 @@ class AgentMind:
         self.agentBody.consume()
         
         if self.agentBody.isDead():
-            return "Dead"
+            return DEAD
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
-        return "isDone"
+            return ISTIRED
+        return ISDONE
 
     def runTreeChildren(self, parent):
-        if parent.Name == "isFood":
+        if parent.Name == ISFOOD:
             return parent.Name
-        elif parent.Name == "isBored":
+        elif parent.Name == ISBORED:
             return parent.Name
         elif parent.Name == "ifFood":
             if self.agentBody.isFoodNear() > 0:
@@ -108,18 +110,18 @@ class AgentMind:
             else:
                 result = False
             return self.runTreeChildren(parent.whichChild(result))
-        elif parent.Name == "func2":
+        elif parent.Name == FUNC2:
             for x in range(parent.maxChildren):
                 result = self.runTreeChildren(parent.getChild(x))
-                if result == "isFood":
+                if result == ISFOOD:
                     return result
-                elif result == "isBored":
+                elif result == ISBORED:
                     return result
-                elif result == "Dead":
+                elif result == DEAD:
                     return result
-                elif result == "isHungry":
+                elif result == ISHUNGRY:
                     return result
-                elif result == "isTried":
+                elif result == ISTIRED:
                     return result
         elif parent.Name == "left":
             return self.left()
@@ -140,17 +142,17 @@ class AgentMind:
             self.end()
 
         isDone = None
-        while self.running or isDone != "isBored" or isDone != "isFood":
+        while self.running or isDone != ISBORED or isDone != ISFOOD:
             isDone = self.runExploreTree()
             if self.agentBody.isDead():
-                return "Dead"
+                return DEAD
             if self.agentBody.needFood():
-                return "isHungry"
+                return ISHUNGRY
             if self.agentBody.checkLoad():
-                return "isTried"
-            if isDone == "isBored":
+                return ISTIRED
+            if isDone == ISBORED:
                 return isDone
-            if isDone == "isFood":
+            if isDone == ISFOOD:
                 return isDone
                 
     def left(self):
@@ -160,11 +162,11 @@ class AgentMind:
         self.agentBody.left()
             
         if self.agentBody.isDead():
-            return "Dead"
+            return DEAD
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
         
     def forward(self):
         if self.should_end():
@@ -173,11 +175,11 @@ class AgentMind:
         self.agentBody.forward()
             
         if self.agentBody.isDead():
-            return "Dead"
+            return DEAD
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
     
     def right(self):
         if self.should_end():
@@ -186,11 +188,11 @@ class AgentMind:
         self.agentBody.right()
             
         if self.agentBody.isDead():
-            return "Dead"
+            return DEAD
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
             
     def Den(self):
         if self.should_end():
@@ -200,32 +202,32 @@ class AgentMind:
             return "continue"
         
         if self.agentBody.isDead():
-            return "Dead" 
+            return DEAD 
         else:
-            return "isDone"
+            return ISDONE
         
     def Known(self):
         if self.should_end():
             self.end()
             
         if self.agentBody.isDead():
-            return "Dead"
+            return DEAD
         
         if len(self.foodLocations) <= 0:
-            return "isBored"
+            return ISBORED
         elif len(self.foodLocations) > 0:
             return self.agentBody.known()
         
         if self.agentBody.isFoodNear() > 0:
-            return "isFood"
+            return ISFOOD
         else:
             self.foodLocations.pop(0)
         if self.agentBody.needFood():
-            return "isHungry"
+            return ISHUNGRY
         if self.agentBody.checkLoad():
-            return "isTried"
+            return ISTIRED
         else:
-            return "isDone"
+            return ISDONE
 
     def runStateBehavior(self):            
         behaviorKey = self.currentState.behavior()
@@ -243,7 +245,7 @@ class AgentMind:
         elif behaviorKey == "Known":
             setter = self.Known()
         
-        if setter == "Dead":
+        if setter == DEAD:
             setter = self.Den()
         if setter != "continue":
             # print(f"{setter} agent{self.id}")
@@ -258,16 +260,16 @@ class AgentMind:
             self.running = False
             print("no state phenotype provided")
         else:
-            if "(isFood)" in self.StatePhenotype:
-                inputsAvailable.append("isFood")
-            if "(isTired)" in self.StatePhenotype:
-                inputsAvailable.append("isTired")
-            if "(isHungry)" in self.StatePhenotype:
-                inputsAvailable.append("isHungry")
-            if "(isBored)" in self.StatePhenotype:
-                inputsAvailable.append("isBored")
-            if "(isDone)" in self.StatePhenotype:
-                inputsAvailable.append("isDone")
+            if f"({ISFOOD})" in self.StatePhenotype:
+                inputsAvailable.append(ISFOOD)
+            if f"({ISTIRED})" in self.StatePhenotype:
+                inputsAvailable.append(ISTIRED)
+            if f"({ISHUNGRY})" in self.StatePhenotype:
+                inputsAvailable.append(ISHUNGRY)
+            if f"({ISBORED})" in self.StatePhenotype:
+                inputsAvailable.append(ISBORED)
+            if f"({ISDONE})" in self.StatePhenotype:
+                inputsAvailable.append(ISDONE)
             self.StateMachine = StateMachine() 
             self.StateMachine.createStateMachine(self.StatePhenotype, self.DNA.getGene(STATEGENE).genotype, inputsAvailable)
         
@@ -294,14 +296,13 @@ class AgentMind:
             clock = pyg.time.Clock() 
             if self.currentState is not None:
                 while(self.running):
-                    for event in pyg.event.get():
-                        if event.type == pyg.QUIT:
-                            self.running = False
                     self.runStateBehavior()
-                    clock.tick(60)
+                    # print(f"{self.id}")
+                    clock.tick(180)
             else:
                 print("dead agent; no start state")
         except EndException:
+            self.running = False
             self.score = self.agentBody.getHomeScore()
     
     def printStateHistory(self):
@@ -325,7 +326,7 @@ class AgentMind:
                 self.evoTimer = 0
             else:
                 self.evoTimer += 1
-            if self.terminal_functions_run == 1000:
+            if self.terminal_functions_run == TERMINALLIMIT:
                 return True
             return False
     
@@ -347,7 +348,7 @@ class AgentMind:
         popAverage = np.round((totalFood / len(agents)), 2)
         novelAgents = []
         for agent in agents:
-            if (np.abs(popAverage - agent.score) > popAverage * .8):
+            if (np.abs(popAverage - agent.score) > popAverage * NOVELTYSTANDARD):
                 novelAgents.append(agent)
         return novelAgents
     
