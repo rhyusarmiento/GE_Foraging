@@ -505,9 +505,9 @@ class AgentBody(ObjectWraper):
             
     def consume(self):
         if self.numFood > 0:
-            self.numFood -= 1
+            # self.numFood -= 1
             self.consumedFood += 1
-            self.hunger += 3
+            # self.hunger += 3
     
     def left(self):
         if self.heading == NORTH:
@@ -689,7 +689,8 @@ class Den(ObjectWraper):
             if numSec == EVO_SEC:
                 foodVelocityAvg = self.intervalFood // EVO_SEC
                 foodAcclerAvg = (foodVelocityAvg - self.lastFoodCheck) // EVO_SEC
-                if (foodVelocityAvg <= 0 and foodAcclerAvg == 0) or foodAcclerAvg < 0:
+                # Formula check done
+                if (foodVelocityAvg == 0 and foodAcclerAvg == 0) or foodAcclerAvg < 0:
                     self.world.evoAgents()
                 self.lastFoodVelAvg = foodVelocityAvg
                 self.intervalFood = 0 
@@ -709,10 +710,11 @@ class Den(ObjectWraper):
         self.foodStored = 0    
     
     def isfeed(self):
-        if self.foodStored > 0:
-            return True
-        else:
-            return False
+        # if self.foodStored > 0:
+        #     return True
+        # else:
+        #     return False
+        return True
         
     def getFoodLocation(self):
         with lock_denFood:
