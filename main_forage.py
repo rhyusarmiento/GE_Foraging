@@ -23,10 +23,14 @@ if __name__ == '__main__':
     print("done")
     allscore = []
     threads = []
+    
     for agent in agents:
         thread = threading.Thread(target=agent.runAgent)
         threads.append(thread)
         thread.start()
+    threadevo = threading.Thread(target=base.evoTimer)
+    threads.append(threadevo)
+    threadevo.start()
     world.startPyGame()
     
     for thread in threads:

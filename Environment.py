@@ -21,11 +21,11 @@ class Environment:
         self.sprites = pyg.sprite.Group()
         self.rendering = False
     
-    def evoAgents(self, score):
+    def evoAgents(self):
         for object in self.objects.copy():
             if object.who() == AGENT:
                 object.sense()
-                object.actUpdateState(score)
+                object.actUpdateState()
                         
     def startPyGame(self):
         pyg.init()
@@ -694,6 +694,7 @@ class Den(ObjectWraper):
                     self.world.evoAgents()
                 self.lastFoodVelAvg = foodVelocityAvg
                 self.intervalFood = 0 
+                numSec = 0
             clock.tick(60)
     
     def depositFood(self, food):

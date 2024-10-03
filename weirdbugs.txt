@@ -30,3 +30,42 @@ Traceback (most recent call last):
     positionSet = self.positions[position]
                   ~~~~~~~~~~~~~~^^^^^^^^^^
 KeyError: (169, 435)
+
+
+Exception has occurred: KeyError
+(240, 122)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 196, in removeObject
+    if len(self.positions[position]) == 0:
+           ~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 239, in moveTo
+    self.world.removeObject(self)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 278, in moveEast
+    self.moveTo(newPositions)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 520, in left
+    self.moveEast()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 190, in left
+    self.agentBody.left()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 136, in runTreeChildren
+    return self.left()
+           ^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 124, in runTreeChildren
+    result = self.runTreeChildren(parent.getChild(x))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 124, in runTreeChildren
+    result = self.runTreeChildren(parent.getChild(x))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 154, in runExploreTreeTested
+    return self.runTreeChildren(self.ExploreTreeTested.root)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 167, in Explore
+    isDone = self.runExploreTreeTested()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 266, in runStates
+    setter = self.Explore()
+             ^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 287, in runStateTestedBehavior
+    doneVal = self.runStates(behaviorKey)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 364, in runAgent
+    self.runStateTestedBehavior()
+KeyError: (240, 122)

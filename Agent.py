@@ -433,15 +433,16 @@ class AgentMind:
         return stateChild
         
     def actUpdateState(self):
-        self.runStateTesting = False
-        homeScore = self.agentBody.home.intervalFood
-        # Formula Check
-        if homeScore != 0:
-            evoScore = self.agentBody.foodInterval + (homeScore * (self.agentBody.foodInterval / homeScore))
-        else: 
-            evoScore = self.agentBody.foodInterval 
-        self.DNATesting.getGene(STATEGENE).score = evoScore
+        if self.runExploreTesting is True:    
+            homeScore = self.agentBody.home.intervalFood
+            # Formula Check state score
+            if homeScore != 0:
+                evoScore = self.agentBody.foodInterval + (homeScore * (self.agentBody.foodInterval / homeScore))
+            else: 
+                evoScore = self.agentBody.foodInterval 
+            self.DNATesting.getGene(STATEGENE).score = evoScore
         
+        self.runStateTesting = False
         if self.DNATested.getGene(STATEGENE).score < self.DNATesting.getGene(STATEGENE).score:
             self.DNATested.addGene(STATEGENE, self.DNATesting.getGene(STATEGENE))
         self.memoryAgents.append(self)
@@ -457,7 +458,7 @@ class AgentMind:
         popAverage = np.round((totalFound / len(genes)), 2)
         novelAgents = []
         for gene in genes:
-            # Formula check
+            # Formula check novel parent
             if np.abs(popAverage - gene.score) > (popAverage * NOVELTYSTANDARD):
                 novelAgents.append(gene)
         return novelAgents
@@ -465,7 +466,7 @@ class AgentMind:
     def getDNAExploreChild(self):
         exploreGenes = []
         for agent in self.memoryAgents:
-            currExplore = agent.DNATesting.getGene(EXPLOREGENE)
+            currExplore = agent.DNATested.getGene(EXPLOREGENE)
             exploreGenes.append(currExplore)
         
         totalFound = 0
@@ -473,7 +474,7 @@ class AgentMind:
             totalFound += gene.score
         popAverage = np.round((totalFound / len(exploreGenes)), 2)
         
-        # Formula check
+        # Formula check should switch
         if self.DNATested.getGene(EXPLOREGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(exploreGenes) > 1:
             self.runExploreTesting = True
             novelParents = self.noveltyFoundSelect(exploreGenes)
@@ -491,10 +492,12 @@ class AgentMind:
         return exploreChild
             
     def actUpdateExplore(self):
+        if self.runStateTesting is True:
+            self.DNATesting.getGene(EXPLOREGENE).score = self.foodFound
+            if self.DNATested.getGene(EXPLOREGENE).score <= self.DNATesting.getGene(EXPLOREGENE).score:
+                self.DNATested.addGene(EXPLOREGENE, self.DNATesting.getGene(EXPLOREGENE))
+        
         self.runExploreTesting = False
-        self.DNATesting.getGene(EXPLOREGENE).score = self.foodFound
-        if self.DNATested.getGene(EXPLOREGENE).score <= self.DNATesting.getGene(EXPLOREGENE).score:
-            self.DNATested.addGene(EXPLOREGENE, self.DNATesting.getGene(EXPLOREGENE))
         self.memoryAgents.append(self)
         newDNA = self.getDNAExploreChild()
         if self.runExploreTesting is True: 
