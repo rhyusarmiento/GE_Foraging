@@ -8,7 +8,7 @@ import threading
 
 if __name__ == '__main__':
     world = Environment()
-    base = Den(world, (random.randint(0,ENVIORN_DIM), random.randint(0,ENVIORN_DIM)))
+    base = Den(world, (random.randint(60,ENVIORN_DIM - 60), random.randint(60,ENVIORN_DIM - 60)))
     world.testReset()
     world.addNewObject(base)
 

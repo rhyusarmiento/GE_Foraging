@@ -46,6 +46,8 @@ class Gene:
     def __init__(self, genotype) -> None:
         self.genotype = genotype
         self.current_codon = 0
+        self.latestScore = 0
+        self.score = 0
     
     def get_codon(self):
         return self.genotype[self.current_codon]
@@ -114,6 +116,7 @@ class Gene:
                         input = random.randint(-40, 40)
                     newGeno[num] = input
         self.genotype = newGeno
+        self.score = 0
  
 # if __name__ == "__main__":
 #     genes = []

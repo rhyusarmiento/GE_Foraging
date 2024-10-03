@@ -1,5 +1,5 @@
-from const import ENVIORN_DIM, ENVIORNTEST, WORLDFILL, DENBORDERSIZE, FOODPERCENT, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE
-from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED
+from const import ENVIORN_DIM, ENVIORNTEST, TESTFOOD, WORLDFILL, DENBORDERSIZE, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE, TOTALFOOD #FOODPERCENT,
+from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC
 from const import NORTH, AGENT, FOOD, DEN, WEST, EAST, SOUTH, ISDONE
 import pygame as pyg
 import numpy as np
@@ -10,6 +10,7 @@ lock_envir = threading.Lock()
 lock_food = threading.Lock()
 lock_den = threading.Lock()
 lock_object = threading.Lock()
+lock_denFood = threading.Lock()
 
 class Environment:
     def __init__(self):
@@ -20,6 +21,12 @@ class Environment:
         self.sprites = pyg.sprite.Group()
         self.rendering = False
     
+    def evoAgents(self, score):
+        for object in self.objects.copy():
+            if object.who() == AGENT:
+                object.sense()
+                object.actUpdateState(score)
+                        
     def startPyGame(self):
         pyg.init()
         self.screen = pyg.display.set_mode((ENVIORN_DIM, ENVIORN_DIM))
@@ -49,25 +56,26 @@ class Environment:
                 if object.agentBrain.running is False:
                     numDone += 1
                 
-            # print(f"{numAgents} to done {numDone}")
+            print(f"{numAgents} to done {numDone}")
             if numAgents == numDone:
                 self.rendering = False
                 
             pyg.display.flip()
-            clock.tick(30)
+            clock.tick(60)
             
     def drawObject(self, object):
         if object.who() == DEN:
             pyg.draw.lines(self.screen, object.color, False, object.positions, width=DENBORDERSIZE)
         elif object.who() == AGENT:
             pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size), (object.size)), width=0)
+            # print(f'{object.center}')
         elif object.who() == FOOD:
             pyg.draw.rect(self.screen, object.color, (object.center[0], object.center[1], (object.size), (object.size)), width=0)
 
     # TODO: multi thread this function (maybe)
     def testSetUp(self):
         self.size = ENVIORNTEST
-        for x in range(self.size * (self.size // FOODPERCENT)):
+        for x in range(TOTALFOOD):
             self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
             
     def testReset(self):
@@ -82,13 +90,32 @@ class Environment:
         for item in garbage:
             self.removeObject(item)
         
-        differenceFood = (self.size * (self.size // FOODPERCENT)) - self.numFood
+        differenceFood = (TOTALFOOD) - self.numFood
         if differenceFood > 0:
             for x in range(differenceFood):
                 self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
         elif differenceFood < 0:
             print(f"not good {differenceFood}")
 
+    def testEvoSetup(self):
+        garbage = []
+        for object in self.objects:
+            if object.who() == AGENT:
+                garbage.append(object)
+            if object.who() == FOOD and object.foodHere > 1:
+                self.numFood -= object.foodHere
+                garbage.append(object)  
+        
+        for item in garbage:
+            self.removeObject(item)
+        
+        differenceFood = (TESTFOOD) - self.numFood
+        if differenceFood > 0:
+            for x in range(differenceFood):
+                self.addNewObject(FoodContainer(self, (random.randint(0, self.size), random.randint(0, self.size))))
+        elif differenceFood < 0:
+            print(f"not good {differenceFood}")
+    
     def printEnvironment(self):
         pass
             
@@ -147,7 +174,8 @@ class Environment:
     #         return True
     #     else:
     #         return False
-                
+    
+    # TODO: contiune to be movement problems  
     def removeObject(self, object):
         if object.who() != AGENT:
             with lock_object:    
@@ -216,36 +244,36 @@ class ObjectWraper:
     def moveNorth(self):
         newPositions = []
         x,y = self.center
-        self.center = (x, y + MOVEMENTSPEED)
+        self.center = (x, self.world.cleanCor(y + MOVEMENTSPEED))
         for position in self.positions:
-            newPositions.append(tuple((position[0], position[1] + MOVEMENTSPEED)))
+            newPositions.append(tuple((position[0], self.world.cleanCor(position[1] + MOVEMENTSPEED))))
         
         self.moveTo(newPositions)
 
     def moveSouth(self):
         newPositions = []
         x,y = self.center
-        self.center = (x, y - MOVEMENTSPEED)
+        self.center = (x, self.world.cleanCor(y - MOVEMENTSPEED))
         for position in self.positions:
-            newPositions.append(tuple((position[0], position[1] - MOVEMENTSPEED)))
+            newPositions.append(tuple((position[0], self.world.cleanCor(position[1] - MOVEMENTSPEED))))
         
         self.moveTo(newPositions)
         
     def moveWest(self):
         newPositions = []
         x,y = self.center
-        self.center = (x - MOVEMENTSPEED, y)
+        self.center = (self.world.cleanCor(x - MOVEMENTSPEED), y)
         for position in self.positions:
-            newPositions.append(tuple((position[0] - MOVEMENTSPEED, position[1])))
+            newPositions.append(tuple((self.world.cleanCor(position[0] - MOVEMENTSPEED), position[1])))
         
         self.moveTo(newPositions)
 
     def moveEast(self):
         newPositions = []
         x,y = self.center
-        self.center = (x + MOVEMENTSPEED, y)
+        self.center = (self.world.cleanCor(x + MOVEMENTSPEED), y)
         for position in self.positions:
-            newPositions.append(tuple((position[0] + MOVEMENTSPEED, position[1])))
+            newPositions.append(tuple((self.world.cleanCor(position[0] + MOVEMENTSPEED), position[1])))
         
         self.moveTo(newPositions)
         
@@ -283,10 +311,12 @@ class AgentBody(ObjectWraper):
         self.consumedFood = 0
         self.color = AGENTCOLOR
         self.agentNearLimit = NEIGHBOOR_LIMIT
+        self.foodInterval = 0
             
     def addFood(self, num):
         self.numFood += num
         self.lifetimeFood += num
+        self.foodInterval += num
       
     def who(self):
         return AGENT
@@ -318,26 +348,32 @@ class AgentBody(ObjectWraper):
         return agentsNear
     
     def isFoodNear(self):
-        radius = self.vision // 2
-        x,y = self.center
-        xStart = x - radius
-        yStart = y - radius
-        xCurr = xStart
-        yCurr = yStart
-        isFood = False
+        # radius = self.vision // 2
+        # x,y = self.center
+        # xStart = x - radius
+        # yStart = y - radius
+        # xCurr = xStart
+        # yCurr = yStart
+        # isFood = False
         
-        while isFood is False and xCurr <= xStart + (2 * radius):
-            while isFood is False and yCurr <= yStart + (2 * radius):
-                objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
-                if objects is not None:
-                    for object in objects.copy():
-                        if object.who() == FOOD:
-                            isFood = True
-                yCurr += 1
-            yCurr = yStart
-            xCurr += 1
+        foodNear = self.checkForFooditems()
+        if len(foodNear) > 0:
+            return True
+        else:
+            return False
+        
+        # while isFood is False and xCurr <= xStart + (2 * radius):
+        #     while isFood is False and yCurr <= yStart + (2 * radius):
+        #         objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
+        #         if objects is not None:
+        #             for object in objects.copy():
+        #                 if object.who() == FOOD:
+        #                     isFood = True
+        #         yCurr += 1
+        #     yCurr = yStart
+        #     xCurr += 1
+        # return isFood
             
-        return isFood
     
     def checkForFooditems(self):
         foodNear = []
@@ -358,6 +394,10 @@ class AgentBody(ObjectWraper):
                 yCurr += 1
             yCurr = yStart
             xCurr += xStart
+            
+        for food in foodNear:
+            self.home.addFoodLocation(food)
+            
         return foodNear
     
     def pickFood(self, objects, pickLimit):
@@ -372,6 +412,7 @@ class AgentBody(ObjectWraper):
                         garbage.add(object)
         for item in garbage:
             self.removeWorldObject(item)
+            self.home.removeFoodLocation(item)
                         
     def pick(self):
         visionRadius = self.vision // 2
@@ -523,7 +564,7 @@ class AgentBody(ObjectWraper):
             self.moveSouth()
             
     def denGoToo(self):
-        currLocation = self.center
+        currLocation = self.center        
         if currLocation != self.home.center:
             self.direction = tuple(np.subtract(self.home.center, currLocation))
             if self.isXCorDirection:
@@ -551,10 +592,17 @@ class AgentBody(ObjectWraper):
             else:
                 return ISDONE
         
+    def getHomeFoodSize(self):
+        return len(self.home.foodLocations.copy())    
+        
+    # FIX: seems as though agent is stuck looking for a food that doesn't exist or cant reach.
     def known(self):
         currLocation = self.center
-        if currLocation != self.agentBrain.getKnownFood(0):
-            self.direction = tuple(np.subtract(self.agentBrain.getKnownFood(0), currLocation))
+        destination = self.home.getFoodLocation().center
+        clock = pyg.time.Clock()
+        
+        while currLocation != destination and not self.needFood():
+            self.direction = tuple(np.subtract(destination, currLocation))
             if self.isXCorDirection:
                 if self.direction[0] > 0:
                     self.moveEast()
@@ -568,7 +616,8 @@ class AgentBody(ObjectWraper):
                     self.moveSouth()
                 self.isXCorDirection = True
             self.hunger -= .5
-            return "continue"
+            # print(f"continue {self.agentBrain.id}")
+            clock.tick(100)
     
     def isDead(self):
         if self.hunger < -10:
@@ -621,15 +670,33 @@ class Den(ObjectWraper):
         self.isFill = False
         self.lifetimeFood = 0
         self.foodStored = 0
+        self.intervalFood = 0
+        self.lastFoodCheck = 0
         self.color = DENCOLOR
+        self.foodLocations = set()
     
     def who(self):
         return DEN
+    
+    def evoTimer(self):
+        clock = pyg.time.Clock() 
+        numSec = 0
+        while self.world.rendering:
+            numSec += 1
+            if numSec == EVO_SEC:
+                foodVelocityAvg = self.intervalFood // EVO_SEC
+                foodAcclerAvg = (foodVelocityAvg - self.lastFoodCheck) // EVO_SEC
+                if (foodVelocityAvg <= 0 and foodAcclerAvg == 0) or foodAcclerAvg < 0:
+                    self.world.evoAgents()
+                self.lastFoodVelAvg = foodVelocityAvg
+                self.intervalFood = 0 
+            clock.tick(60)
     
     def depositFood(self, food):
         with lock_den:
             self.foodStored += food
             self.lifetimeFood += food
+            self.intervalFood += food
     
     def eatFood(self):
         with lock_den:
@@ -644,7 +711,20 @@ class Den(ObjectWraper):
         else:
             return False
         
-
+    def getFoodLocation(self):
+        with lock_denFood:
+            toGo = self.foodLocations.pop()
+            self.foodLocations.add(toGo)
+            return toGo
+    
+    def addFoodLocation(self, food):
+        with lock_denFood:
+            return self.foodLocations.add(food)
+    
+    def removeFoodLocation(self, food):
+        with lock_denFood:
+            return self.foodLocations.discard(food)
+        
 if __name__ == "__main__":
     envir = Environment()
     base = Den(envir, (30,30))
