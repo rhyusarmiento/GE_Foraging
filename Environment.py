@@ -56,7 +56,7 @@ class Environment:
                 if object.agentBrain.running is False:
                     numDone += 1
                 
-            print(f"{numAgents} to done {numDone}")
+            # print(f"{numAgents} to done {numDone}")
             if numAgents == numDone:
                 self.rendering = False
                 
@@ -583,10 +583,12 @@ class AgentBody(ObjectWraper):
             return "continue" 
         else:
             self.home.depositFood(self.numFood)
+            if self.numFood > 0:
+                print(f"deposit {self.numFood}")
             self.numFood = 0
             
-            if self.home.isfeed() and self.hunger < 10:
-                self.home.eatFood()
+            if self.home.isfeed() and self.hunger < 20:
+                # self.home.eatFood()
                 self.hunger += 3
                 return "continue"
             else:
@@ -616,6 +618,7 @@ class AgentBody(ObjectWraper):
                     self.moveSouth()
                 self.isXCorDirection = True
             self.hunger -= .5
+            currLocation = self.center
             # print(f"continue {self.agentBrain.id}")
             clock.tick(100)
     
