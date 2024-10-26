@@ -1,10 +1,11 @@
 from const import ENVIORN_DIM, ENVIORNTEST, TESTFOOD, WORLDFILL, DENBORDERSIZE, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE, TOTALFOOD #FOODPERCENT,
-from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC
+from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC, NUMAGENTS
 from const import NORTH, AGENT, FOOD, DEN, WEST, EAST, SOUTH, ISDONE
 import pygame as pyg
 import numpy as np
 import random
 import threading
+# import math as m
 
 lock_envir = threading.Lock()
 lock_food = threading.Lock()
@@ -21,11 +22,25 @@ class Environment:
         self.sprites = pyg.sprite.Group()
         self.rendering = False
     
-    def evoAgents(self):
+    def evoAgents(self, foodAcc, foodVel, baseCenter, baseFoodInterval):
+        numVel = 0
+        numBase = 0
+        isDead = 0
         for object in self.objects.copy():
+            if object.who() == DEN:
+                print(f"know locations {object.foodLocations}")   
             if object.who() == AGENT:
-                object.sense()
-                object.actUpdateState()
+                if object.agentBrain.running is False:
+                    isDead += 1
+                if foodVel == 0 or foodAcc < 0:
+                    numVel += 1
+                    object.agentBrain.sense()
+                    object.agentBrain.actUpdateState()
+                elif object.center == baseCenter and baseFoodInterval / NUMAGENTS >= object.foodDepositInterval:
+                    numBase += 1
+                    object.agentBrain.sense()
+                    object.agentBrain.actUpdateState()
+        print(f"numVel {numVel} numbaseEvo {numBase} not running {isDead}")
                         
     def startPyGame(self):
         pyg.init()
@@ -281,6 +296,7 @@ class ObjectWraper:
         return self.world.numFood
     
     def removeWorldObject(self, object):
+        print(f"remove food {object}")
         self.world.removeObject(object)
         
     def addWorldObject(self, item):
@@ -311,12 +327,13 @@ class AgentBody(ObjectWraper):
         self.consumedFood = 0
         self.color = AGENTCOLOR
         self.agentNearLimit = NEIGHBOOR_LIMIT
-        self.foodInterval = 0
+        self.foodDepositInterval = 0
+        self.totalFoodInterval = 0
             
     def addFood(self, num):
         self.numFood += num
+        self.totalFoodInterval += num
         self.lifetimeFood += num
-        self.foodInterval += num
       
     def who(self):
         return AGENT
@@ -376,7 +393,8 @@ class AgentBody(ObjectWraper):
             
     
     def checkForFooditems(self):
-        foodNear = []
+        # should be a set
+        foodNear = set()
         radius = self.vision // 2
         x,y = self.center
         xStart = x - radius
@@ -390,7 +408,7 @@ class AgentBody(ObjectWraper):
                 if objects is not None:    
                     for object in objects.copy():
                         if object.who() == FOOD:
-                            foodNear.append(object)
+                            foodNear.add(object)
                 yCurr += 1
             yCurr = yStart
             xCurr += xStart
@@ -413,6 +431,7 @@ class AgentBody(ObjectWraper):
         for item in garbage:
             self.removeWorldObject(item)
             self.home.removeFoodLocation(item)
+            print(f"agent {self} pick food {item}")
                         
     def pick(self):
         visionRadius = self.vision // 2
@@ -439,6 +458,7 @@ class AgentBody(ObjectWraper):
                 yBodyCurr += 1 
             yBodyCurr = yBodyStart                     
             xBodyCurr += 1
+            
         # not body
         while pickLimit > 0 and (xCurr <= xStart + (2 * visionRadius) and not (xCurr >= xBodyStart and xCurr <= xBodyStart + (2 * bodyRadius))):
             while pickLimit > 0 and (yCurr <= yStart + (2 * visionRadius) and not (yCurr >= yBodyStart and yCurr <= yBodyStart + (2 * bodyRadius))):
@@ -460,6 +480,7 @@ class AgentBody(ObjectWraper):
                         dropLimit -= 1
                     elif object.who() == DEN:
                         object.depositFood(1)
+                        self.foodDepositInterval += 1
                         self.numFood -= 1
                         dropLimit -= 1
                     else:
@@ -564,35 +585,43 @@ class AgentBody(ObjectWraper):
             self.moveSouth()
             
     def denGoToo(self):
-        currLocation = self.center        
+        currLocation = self.center
+        clock = pyg.time.Clock()
+        
         if currLocation != self.home.center:
-            self.direction = tuple(np.subtract(self.home.center, currLocation))
-            if self.isXCorDirection:
-                if self.direction[0] > 0:
-                    self.moveEast()
-                elif self.direction[0] < 0:
-                    self.moveWest()
-                self.isXCorDirection = False
-            else:
-                if self.direction[1] > 0:
-                    self.moveNorth()
-                elif self.direction[1] < 0:
-                    self.moveSouth()
-                self.isXCorDirection = True
-            self.hunger -= .5
-            return "continue" 
+            while currLocation != self.home.center:
+                self.direction = tuple(np.subtract(self.home.center, currLocation))
+                if self.isXCorDirection:
+                    if self.direction[0] > 0:
+                        self.moveEast()
+                    elif self.direction[0] < 0:
+                        self.moveWest()
+                    self.isXCorDirection = False
+                else:
+                    if self.direction[1] > 0:
+                        self.moveNorth()
+                    elif self.direction[1] < 0:
+                        self.moveSouth()
+                    self.isXCorDirection = True
+                    
+                if self.agentBrain.should_end():
+                    self.agentBrain.end()
+                self.hunger -= .5
+                currLocation = self.center
+                clock.tick(100)
+            return "continue"
         else:
             self.home.depositFood(self.numFood)
+            self.foodDepositInterval += self.numFood
             if self.numFood > 0:
                 print(f"deposit {self.numFood}")
             self.numFood = 0
             
-            if self.home.isfeed() and self.hunger < 20:
+            while self.home.isfeed() and self.hunger < HUNGER:
                 # self.home.eatFood()
-                self.hunger += 3
-                return "continue"
-            else:
-                return ISDONE
+                self.hunger += 10
+                
+            return ISDONE
         
     def getHomeFoodSize(self):
         return len(self.home.foodLocations.copy())    
@@ -617,6 +646,8 @@ class AgentBody(ObjectWraper):
                 elif self.direction[1] < 0:
                     self.moveSouth()
                 self.isXCorDirection = True
+            if self.agentBrain.should_end():
+                self.agentBrain.end()
             self.hunger -= .5
             currLocation = self.center
             # print(f"continue {self.agentBrain.id}")
@@ -674,7 +705,7 @@ class Den(ObjectWraper):
         self.lifetimeFood = 0
         self.foodStored = 0
         self.intervalFood = 0
-        self.lastFoodCheck = 0
+        self.lastFoodVelAvg = 0
         self.color = DENCOLOR
         self.foodLocations = set()
     
@@ -687,11 +718,10 @@ class Den(ObjectWraper):
         while self.world.rendering:
             numSec += 1
             if numSec == EVO_SEC:
-                foodVelocityAvg = self.intervalFood // EVO_SEC
-                foodAcclerAvg = (foodVelocityAvg - self.lastFoodCheck) // EVO_SEC
+                foodVelocityAvg = self.intervalFood / EVO_SEC
+                foodAcclerAvg = (foodVelocityAvg - self.lastFoodVelAvg) / EVO_SEC
                 # Formula check done
-                if (foodVelocityAvg == 0 and foodAcclerAvg == 0) or foodAcclerAvg < 0:
-                    self.world.evoAgents()
+                self.world.evoAgents(foodAcclerAvg, foodVelocityAvg, self.center, self.intervalFood)
                 self.lastFoodVelAvg = foodVelocityAvg
                 self.intervalFood = 0 
                 numSec = 0
@@ -725,11 +755,11 @@ class Den(ObjectWraper):
     
     def addFoodLocation(self, food):
         with lock_denFood:
-            return self.foodLocations.add(food)
+            self.foodLocations.add(food)
     
     def removeFoodLocation(self, food):
         with lock_denFood:
-            return self.foodLocations.discard(food)
+            self.foodLocations.discard(food)
         
 if __name__ == "__main__":
     envir = Environment()

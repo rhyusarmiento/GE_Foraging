@@ -1,9 +1,9 @@
 import random
 from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
-from const import DEAD, ISHUNGRY, ISDONE, ISBORED, ISFOOD, ISTIRED, FUNC2
+from const import DEAD, ISHUNGRY, ISDONE, ISBORED, ISFOOD, ISTIRED, FUNC2, AGENTCOLOR, BLACK, BLUE, YELLOW, ORAGNE, PURPLE
 from const import EXPLOREGENE, STATEGENE, ENVIORNTEST, EVO_LIMIT, TERMINALLIMIT
-from const import NOVELTYSTANDARD, POPLUATIONTOLERANCE
+from const import NOVELTYSTANDARD, POPLUATIONTOLERANCE, NUMAGENTS
 from Gene import Gene
 from Environment import Environment, AgentBody, Den
 import numpy as np
@@ -40,13 +40,15 @@ class AgentMind:
         # self.foodLocations = []
         self.stateHistory = []
         # evolution
-        self.memoryAgents = []
+        self.memoryAgents = set()
         self.evoLimit = EVO_LIMIT
         self.evoTimer = 0
         self.isTest = False
         self.foodFound = 0
         self.runExploreTesting = False
         self.runStateTesting = False
+        self.runStateTurn = True
+        self.runExploreTurn = True
         
     def printID(self):
         print(f"{self.id}")
@@ -64,6 +66,7 @@ class AgentMind:
     #     return self.foodLocations[spot]
         
     def Pick(self):
+        self.agentBody.color = BLACK
         if self.should_end():
             self.end()
             
@@ -79,6 +82,7 @@ class AgentMind:
             return ISDONE
         
     def Drop(self):
+        self.agentBody.color = PURPLE
         if self.should_end():
             self.end()
             
@@ -94,6 +98,7 @@ class AgentMind:
             return ISDONE
         
     def Consume(self):
+        self.agentBody.color = ORAGNE
         if self.should_end():
             self.end()
         
@@ -154,13 +159,14 @@ class AgentMind:
             return self.runTreeChildren(self.ExploreTreeTested.root)
         
     def Explore(self):
+        self.agentBody.color = BLUE
         if self.should_end():
             self.end()
         
         clock = pyg.time.Clock() 
         isDone = None
         while isDone != ISBORED and isDone != ISFOOD:
-            # print(f'hunger {self.agentBody.hunger}')
+            # print(f'{self} is increment {self.terminal_functions_run}')
             if self.runExploreTesting is True:
                 isDone = self.runExploreTreeTesting()
             else:
@@ -223,6 +229,8 @@ class AgentMind:
             return ISTIRED
             
     def Den(self):
+        self.agentBody.color = AGENTCOLOR
+        
         if self.should_end():
             self.end()
 
@@ -235,6 +243,8 @@ class AgentMind:
             return ISDONE
         
     def Known(self):
+        self.agentBody.color = YELLOW
+        
         if self.should_end():
             self.end()
             
@@ -268,27 +278,36 @@ class AgentMind:
             setter = self.Den()
         elif behaviorKey == "Known":
             setter = self.Known()
-        
+    
         if setter == DEAD:
-            setter = self.Den()
+            # print(f"bro dead {self}")
+            setter = self.Den() 
         return setter
 
     def runStateTestingBehavior(self):
         behaviorKey = self.currentStateTesting.behavior()
         doneVal = self.runStates(behaviorKey)
+        # print(f"yo testing {doneVal}")
         if doneVal != "continue":
             state = self.currentStateTesting.changeState(doneVal)
             if state is not None:
                 self.currentStateTesting = state
+            else:
+                print("BAd Testing FSM")
+                self.currentStateTesting = self.StateMachineTesting.getStartState()
 
     def runStateTestedBehavior(self):            
         # self.stateHistory.append(behaviorKey)
         behaviorKey = self.currentStateTested.behavior()
         doneVal = self.runStates(behaviorKey)
+        # print(f"yo tested {doneVal}")
         if doneVal != "continue":
             state = self.currentStateTested.changeState(doneVal)
             if state is not None:
                 self.currentStateTested = state
+            else:
+                print("BAd Tested FSM")
+                self.currentStateTested = self.StateMachineTested.getStartState()
             
     def findInputAvail(self, inputList, searchString):
         if f"({ISFOOD})" in searchString:
@@ -364,13 +383,12 @@ class AgentMind:
                         self.runStateTestedBehavior()
                     else:
                         self.runStateTestingBehavior()
-                    clock.tick(100)
+                    clock.tick(200)
                     # print(f"{self.id}")
             else:
                 print("dead agent; no start state")
         except EndException:
             self.running = False
-            self.score = self.agentBody.getHomeScore()
     
     def printStateHistory(self):
         for state in self.stateHistory:
@@ -392,16 +410,16 @@ class AgentMind:
         # print(f"{len(agents)} and {self.id}")
         for agentBody in agents:
             # print(f"I can seeeeee {self.id}")
-            self.memoryAgents.append(agentBody.agentBrain)
+            self.memoryAgents.add(agentBody.agentBrain)
     
     def noveltyFoodSelect(self, genes):
-        totalFood = 0
+        totalFoodScore = 0
         for gene in genes:
-            totalFood += gene.score
-        popAverage = np.round((totalFood / len(genes)), 2)
+            totalFoodScore += gene.score
+        popAverage = totalFoodScore / len(genes)
         novelAgents = []
         for gene in genes:
-            if np.abs(popAverage - gene.score) > (popAverage * NOVELTYSTANDARD):
+            if gene.score > (popAverage * NOVELTYSTANDARD):
                 novelAgents.append(gene)
         return novelAgents
     
@@ -411,43 +429,50 @@ class AgentMind:
             currState = agent.DNATested.getGene(STATEGENE)
             stateGenes.append(currState)
         
-        totalFood = 0
+        totalFoodScore = 0
         for gene in stateGenes:
-            totalFood += gene.score
-        popAverage = np.round((totalFood / len(stateGenes)), 2)
+            totalFoodScore += gene.score
+        popAverage = totalFoodScore / len(stateGenes)
         
         if self.DNATested.getGene(STATEGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(stateGenes) > 1:
             self.runStateTesting = True
             novelParents = self.noveltyFoodSelect(stateGenes)
             newGene = []
+            # print(f"novel parents {len(novelParents)}")
             if len(novelParents) > 0:
                 for y in range(len(novelParents[0].genotype)):
                     randGene = random.randint(0, len(novelParents) - 1)
                     newGene.append(novelParents[randGene].genotype[y])
-                stateChild = Gene(newGene).mutate()
+                stateChild = Gene(newGene)
+                # stateChild.mutate()
             else:
-                stateChild = Gene(self.DNATesting.getGene(STATEGENE).genotype).mutate()
+                stateChild = Gene(self.DNATested.getGene(STATEGENE).genotype)
+                stateChild.largeMutate()
         else:
             stateChild = None
             
+        # if self.runStateTurn:
+        #     self.runStateTurn = False
+        # else:
+        #     self.runStateTurn = True
+        
         return stateChild
         
     def actUpdateState(self):
-        if self.runExploreTesting is True:    
-            homeScore = self.agentBody.home.intervalFood
-            # Formula Check state score
-            if homeScore != 0:
-                evoScore = self.agentBody.foodInterval + (homeScore * (self.agentBody.foodInterval / homeScore))
-            else: 
-                evoScore = self.agentBody.foodInterval 
+        if self.runStateTesting is True:
+            evoScore = 2*(self.agentBody.foodDepositInterval) + self.agentBody.totalFoodInterval
+            # + self.agentBody.home.intervalFood / NUMAGENTS
             self.DNATesting.getGene(STATEGENE).score = evoScore
-        
+            self.agentBody.foodDepositInterval = 0
+            self.agentBody.totalFoodInterval = 0
+            
         self.runStateTesting = False
-        if self.DNATested.getGene(STATEGENE).score < self.DNATesting.getGene(STATEGENE).score:
+        if self.DNATested.getGene(STATEGENE).score <= self.DNATesting.getGene(STATEGENE).score:
             self.DNATested.addGene(STATEGENE, self.DNATesting.getGene(STATEGENE))
-        self.memoryAgents.append(self)
+        self.memoryAgents.add(self)
         newDNA = self.getDNAStateChild()
         if self.runStateTesting is True:
+            # print(f"testing State {self.id}")
             self.DNATesting.addGene(STATEGENE, newDNA)
             self.generate_StateMachineTesting()
     
@@ -459,7 +484,7 @@ class AgentMind:
         novelAgents = []
         for gene in genes:
             # Formula check novel parent
-            if np.abs(popAverage - gene.score) > (popAverage * NOVELTYSTANDARD):
+            if gene.score > (popAverage * NOVELTYSTANDARD):
                 novelAgents.append(gene)
         return novelAgents
     
@@ -472,7 +497,7 @@ class AgentMind:
         totalFound = 0
         for gene in exploreGenes:
             totalFound += gene.score
-        popAverage = np.round((totalFound / len(exploreGenes)), 2)
+        popAverage = totalFound / len(exploreGenes)
         
         # Formula check should switch
         if self.DNATested.getGene(EXPLOREGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(exploreGenes) > 1:
@@ -483,24 +508,33 @@ class AgentMind:
                 for y in range(len(novelParents[0].genotype)):
                     randGene = random.randint(0, len(novelParents) - 1)
                     newGene.append(novelParents[randGene].genotype[y])
-                exploreChild = Gene(newGene).mutate()
+                exploreChild = Gene(newGene)
+                # exploreChild = Gene(newGene).mutate()
             else:
-                exploreChild = Gene(self.DNATesting.getGene(EXPLOREGENE).genotype).mutate()
+                exploreChild = Gene(self.DNATested.getGene(EXPLOREGENE).genotype)  
+                exploreChild.largeMutate()
         else:
             exploreChild = None
+        
+        # if self.runExploreTurn:
+        #     self.runExploreTurn = False
+        # else:
+        #     self.runExploreTurn = True
             
         return exploreChild
             
     def actUpdateExplore(self):
-        if self.runStateTesting is True:
+        if self.runExploreTesting is True:
             self.DNATesting.getGene(EXPLOREGENE).score = self.foodFound
-            if self.DNATested.getGene(EXPLOREGENE).score <= self.DNATesting.getGene(EXPLOREGENE).score:
-                self.DNATested.addGene(EXPLOREGENE, self.DNATesting.getGene(EXPLOREGENE))
+            
+        if self.DNATested.getGene(EXPLOREGENE).score <= self.DNATesting.getGene(EXPLOREGENE).score:
+            self.DNATested.addGene(EXPLOREGENE, self.DNATesting.getGene(EXPLOREGENE))
         
         self.runExploreTesting = False
         self.memoryAgents.append(self)
         newDNA = self.getDNAExploreChild()
         if self.runExploreTesting is True: 
+            print(f"{self.id} testing explore")
             self.DNATesting.addGene(EXPLOREGENE, newDNA)
             self.generate_ExploreTreeTesting()
     

@@ -2,6 +2,7 @@ import re
 import random
 from const import STATE_RULES, EXPLORE_RULES, EXPLOREGENE, STATEGENE
 from const import MUTATION_RATE, MUTATION_FIRSTDECUT, MUTATION_SECONDDECUT, MUTATION_THIRDDECUT
+from const import LARGE_MUTATION_RATE, LARGE_MUTATION_FIRSTDECUT, LARGE_MUTATION_SECONDDECUT, LARGE_MUTATION_THIRDDECUT
 from const import GENE_LEN, GENE_FIRSTCUT, GENE_SECONDCUT, GENE_THIRDCUT
 from GGraph import GGraph
 
@@ -111,6 +112,36 @@ class Gene:
                     newGeno[num] = input
             else:
                 if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_THIRDDECUT)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+        self.genotype = newGeno
+        self.score = 0
+        
+    def largeMutate(self):
+        newGeno = self.genotype.copy()
+        for num in range(len(newGeno)):
+            if num < (len(newGeno) * GENE_FIRSTCUT):
+                if random.randint(1,100) > (100 * LARGE_MUTATION_RATE):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            elif num < (len(newGeno) * GENE_SECONDCUT):
+                if random.randint(1,100) > (100 * (LARGE_MUTATION_RATE - LARGE_MUTATION_FIRSTDECUT)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            elif num < (len(newGeno) * GENE_THIRDCUT):
+                if random.randint(1,100) > (100 * (LARGE_MUTATION_RATE - LARGE_MUTATION_SECONDDECUT)):
+                    input = random.randint(-40, 40)
+                    while input == 0:
+                        input = random.randint(-40, 40)
+                    newGeno[num] = input
+            else:
+                if random.randint(1,100) > (100 * (LARGE_MUTATION_RATE - LARGE_MUTATION_THIRDDECUT)):
                     input = random.randint(-40, 40)
                     while input == 0:
                         input = random.randint(-40, 40)

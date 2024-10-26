@@ -69,3 +69,84 @@ Exception has occurred: KeyError
   File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 364, in runAgent
     self.runStateTestedBehavior()
 KeyError: (240, 122)
+
+
+Exception in thread Thread-14 (runAgent):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 384, in runAgent
+    self.runStateTestingBehavior()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 288, in runStateTestingBehavior
+    doneVal = self.runStates(behaviorKey)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 280, in runStates
+    setter = self.Known()
+             ^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 257, in Known
+    self.agentBody.known()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 632, in known
+    self.moveNorth()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 261, in moveNorth
+    self.moveTo(newPositions)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 249, in moveTo
+    self.world.removeObject(self)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 204, in removeObject
+    positionSet = self.positions[position]
+                  ~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: (211, 242)
+Exception in thread Thread-8 (runAgent):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 384, in runAgent
+    self.runStateTestingBehavior()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 288, in runStateTestingBehavior
+    doneVal = self.runStates(behaviorKey)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 280, in runStates
+    setter = self.Known()
+             ^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 257, in Known
+    self.agentBody.known()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 632, in known
+    self.moveNorth()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 261, in moveNorth
+    self.moveTo(newPositions)
+numVel 18 numbase 0
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 249, in moveTo
+    self.world.removeObject(self)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 204, in removeObject
+    positionSet = self.positions[position]
+                  ~~~~~~~~~~~~~~^^^^^^^^^^
+
+Exception in thread Thread-5 (runAgent):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 384, in runAgent
+    self.runStateTestingBehavior()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 288, in runStateTestingBehavior
+    doneVal = self.runStates(behaviorKey)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 283, in runStates
+    setter = self.Den() 
+             ^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 237, in Den
+    if self.agentBody.denGoToo() == "continue":
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 602, in denGoToo
+    self.moveSouth()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 275, in moveSouth
+    self.moveTo(newPositions)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 254, in moveTo
+    self.world.removeObject(self)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 210, in removeObject
+    positionSet.remove(object)
+KeyError: <Environment.AgentBody object at 0x000001B838148950>

@@ -6,6 +6,15 @@ import random
 # import sys
 import threading
 
+# notes:
+# movement, known locations removeal, novel parents, bad transfer, downwards agents, solo agents dieing, 11 novel parents
+# Color Test:
+# Stuck on consume and pick/drop
+# Den goes around the whole map
+# known gets stuck 
+# knowns go to dead spot reapeatily 
+# deposit when no known food exist
+
 if __name__ == '__main__':
     world = Environment()
     base = Den(world, (random.randint(60,ENVIORN_DIM - 60), random.randint(60,ENVIORN_DIM - 60)))
@@ -24,6 +33,7 @@ if __name__ == '__main__':
     allscore = []
     threads = []
     
+    world.rendering = True
     for agent in agents:
         thread = threading.Thread(target=agent.runAgent)
         threads.append(thread)
