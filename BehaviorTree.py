@@ -1,9 +1,9 @@
 # import plotly.graph_objects as go
-# import plotly.io as pio
-from const import EXPLORE_RULES
-from GGraph import GGraph
-import random
-from Gene import Gene
+# # import plotly.io as pio
+# from const import EXPLORE_RULES
+# from GGraph import GGraph
+# import random
+# from Gene import Gene
 
 class BehaviorTree:
     def __init__(self, phenotype):

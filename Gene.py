@@ -10,15 +10,17 @@ class DNAManager:
     def __init__(self):
         self.Genes = {}
         self.stateGraph = GGraph(STATE_RULES)
+        self.stateGraph.setNodeIndex()
         self.behaviorGraph = GGraph(EXPLORE_RULES)
-    
+        self.behaviorGraph.setNodeIndex()
+        
     def addGene(self, name, gene=None):
         if gene is None:
             genelist = []
             for x in range(GENE_LEN):
-                num = random.randint(-60, 60)
+                num = random.randint(0, 60)
                 while num == 0:
-                    num = random.randint(-60, 60)
+                    num = random.randint(0, 60)
                 genelist.append(num)
             gene = Gene(genelist)
         self.Genes[name] = gene
@@ -33,15 +35,68 @@ class DNAManager:
     def getGenePhenotype(self, name):
         gene = self.getGene(name)
         if name == EXPLOREGENE:
-            return gene.generate_phenotype(self.behaviorGraph, "<start>")
+            return gene.generate_phenotype(self.behaviorGraph, "<start>", EXPLOREGENE)
         elif name == STATEGENE:
-            return gene.generate_phenotype(self.stateGraph, "<start>")
+            return gene.generate_phenotype(self.stateGraph, "<start>", STATEGENE)
         else:
             return None
         
     def mutateGenes(self):
         for key in self.Genes:
             self.Genes[key].mutate()
+            
+    def crossoverProduction(self, parentGenes, graphID):
+        newGenotype = []
+        codonIndex = 0
+        while codonIndex < len(parentGenes[0].genotype):
+            randGeneIndex = random.randint(0, len(parentGenes) - 1)
+            currentParent = parentGenes[randGeneIndex]
+            disectBlock = []
+            currentCodon = currentParent.genotype[codonIndex]
+            if graphID == STATEGENE:
+                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)            
+            elif graphID == EXPLOREGENE:
+                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+            newGenotype.append(disectBlock)
+        return newGenotype
+    
+    def genoAppendSearch(self, codonIndex, disectBlock, graphID, currentCodon, geno):
+        if not codonIndex + 1 >= len(geno):
+            if graphID == STATEGENE:
+                nextnode = self.stateGraph.find_for_crossover(currentCodon)
+            elif graphID == EXPLOREGENE:
+                nextnode = self.behaviorGraph.find_for_crossover(currentCodon)
+
+            if nextnode is False:
+                disectBlock.append(currentCodon)
+                codonIndex += 1
+                currentCodon = geno[codonIndex]
+                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
+            else:
+                if nextnode.isTerminal:
+                    disectBlock.append(currentCodon)
+                    codonIndex += 1
+                else:
+                    disectBlock.append(currentCodon)
+                    codonIndex += 1
+                    currentCodon = geno[codonIndex]
+                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
+                    
+    def mutation(self, gene, graphID):
+        newGenotype = []
+        codonIndex = 0
+        while codonIndex < len(gene.genotype):
+            insertCodon = gene.mutateValue(codonIndex)
+            if insertCodon is False:
+                codonIndex += 1
+            else: 
+                disectBlock = []
+                if graphID == STATEGENE:
+                    self.genoAppendSearch(codonIndex, disectBlock, graphID, insertCodon, gene.genotype)            
+                elif graphID == EXPLOREGENE:
+                    self.genoAppendSearch(codonIndex, disectBlock, graphID, insertCodon, gene.genotype)
+                newGenotype.append(disectBlock)
+        return newGenotype
         
 class Gene:
     def __init__(self, genotype) -> None:
@@ -60,7 +115,12 @@ class Gene:
                 if gene.current_codon >= len(gene.genotype):
                     return terminal_string
                 
-                production = rules.find_by_mod(non_terminal, gene.get_codon())
+                response = rules.find_by_mod(non_terminal, gene)
+                if response is None:
+                    return terminal_string
+                else:
+                    production = response
+                    
                 # substitute the non-terminal with the decided on production
                 terminal_string = re.sub(non_terminal, production, terminal_string, 1)
                 gene.current_codon += 1
@@ -82,42 +142,28 @@ class Gene:
         return terminal_string
     
     # Generates the program/expression represented by the gene i.e. the phenotype.
-    def generate_phenotype(self, rules, start_symbol):
+    def generate_phenotype(self, rules, start_symbol, genetype):
         expression = Gene.parse_expression(rules, start_symbol, self, start_symbol)
         # print(expression)
         self.current_codon = 0
         expression = Gene.finish_expression(rules, self, expression)
         return expression
     
-    def mutate(self):
+    def mutateValue(self, num):
         newGeno = self.genotype.copy()
-        for num in range(len(newGeno)):
-            if num < (len(newGeno) * GENE_FIRSTCUT):
-                if random.randint(1,100) > (100 * MUTATION_RATE):
-                    input = random.randint(-40, 40)
-                    while input == 0:
-                        input = random.randint(-40, 40)
-                    newGeno[num] = input
-            elif num < (len(newGeno) * GENE_SECONDCUT):
-                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_FIRSTDECUT)):
-                    input = random.randint(-40, 40)
-                    while input == 0:
-                        input = random.randint(-40, 40)
-                    newGeno[num] = input
-            elif num < (len(newGeno) * GENE_THIRDCUT):
-                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_SECONDDECUT)):
-                    input = random.randint(-40, 40)
-                    while input == 0:
-                        input = random.randint(-40, 40)
-                    newGeno[num] = input
-            else:
-                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_THIRDDECUT)):
-                    input = random.randint(-40, 40)
-                    while input == 0:
-                        input = random.randint(-40, 40)
-                    newGeno[num] = input
-        self.genotype = newGeno
-        self.score = 0
+        if num < (len(newGeno) * GENE_FIRSTCUT):
+            if random.randint(1,100) > (100 * MUTATION_RATE):
+                return random.randint(0, 60)
+        elif num < (len(newGeno) * GENE_SECONDCUT):
+            if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_FIRSTDECUT)):
+                return random.randint(0, 60)
+        elif num < (len(newGeno) * GENE_THIRDCUT):
+            if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_SECONDDECUT)):
+                return random.randint(0, 60)
+        else:
+            if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_THIRDDECUT)):
+                return random.randint(0, 60)
+        return False
         
     def largeMutate(self):
         newGeno = self.genotype.copy()

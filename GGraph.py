@@ -6,6 +6,16 @@ class GGraph:
         self.Nodes = []
         self.generateGraph(rules)
         self.isGood = False
+        self.nodeIndex = {}
+        self.nodesSize = 0
+        
+    def setNodeIndex(self):
+        num = 0
+        for node in self.Nodes:
+            self.nodeIndex[num] = node
+            num += 1
+        
+        self.nodesSize = num
         
     # return True if node is in graph
     def isNode(self, rule):
@@ -72,9 +82,25 @@ class GGraph:
         for node in self.Nodes:
             print(f'{node.value}:{node.weight}', [n.value for n in node.outNodes])
     
-    def find_by_mod(self, rule, codon):
+    def find_by_mod(self, rule, gene):
         productions = self.getNode(rule).outNodes
-        return productions[codon % len(productions)].value
+        codon = gene.get_codon()
+        modValue = codon % self.nodesSize
+        while modValue >= len(productions):
+            gene.current_codon += 1
+            if gene.current_codon >= len(gene.genotype):
+                return None
+            codon = gene.get_codon()
+            modValue = codon % self.nodesSize
+        return productions[codon % self.nodesSize].value
+    
+    def find_for_crossover(self, inputCodon):
+        node = self.nodeIndex[inputCodon % self.nodesSize]
+        productions = node.outNodes
+        if inputCodon % self.nodesSize >= len(productions):
+            return False
+        else:
+            return productions[inputCodon % self.nodesSize]
             
     def weight_traveral(self, Node, codon):
         if Node.isTerminal is True:

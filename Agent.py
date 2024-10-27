@@ -3,7 +3,7 @@ from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
 from const import DEAD, ISHUNGRY, ISDONE, ISBORED, ISFOOD, ISTIRED, FUNC2, AGENTCOLOR, BLACK, BLUE, YELLOW, ORAGNE, PURPLE
 from const import EXPLOREGENE, STATEGENE, ENVIORNTEST, EVO_LIMIT, TERMINALLIMIT
-from const import NOVELTYSTANDARD, POPLUATIONTOLERANCE, NUMAGENTS
+from const import NOVELTYSTANDARD, POPLUATIONTOLERANCE
 from Gene import Gene
 from Environment import Environment, AgentBody, Den
 import numpy as np
@@ -293,7 +293,7 @@ class AgentMind:
             if state is not None:
                 self.currentStateTesting = state
             else:
-                print("BAd Testing FSM")
+                # print("BAd Testing FSM")
                 self.currentStateTesting = self.StateMachineTesting.getStartState()
 
     def runStateTestedBehavior(self):            
@@ -306,7 +306,7 @@ class AgentMind:
             if state is not None:
                 self.currentStateTested = state
             else:
-                print("BAd Tested FSM")
+                # print("BAd Tested FSM")
                 self.currentStateTested = self.StateMachineTested.getStartState()
             
     def findInputAvail(self, inputList, searchString):
@@ -440,14 +440,13 @@ class AgentMind:
             newGene = []
             # print(f"novel parents {len(novelParents)}")
             if len(novelParents) > 0:
-                for y in range(len(novelParents[0].genotype)):
-                    randGene = random.randint(0, len(novelParents) - 1)
-                    newGene.append(novelParents[randGene].genotype[y])
+                geneSegment = self.DNATested.crossoverProduction(novelParents, STATEGENE)
+                newGene.append(geneSegment)
                 stateChild = Gene(newGene)
                 # stateChild.mutate()
             else:
-                stateChild = Gene(self.DNATested.getGene(STATEGENE).genotype)
-                stateChild.largeMutate()
+                stateChild = Gene(self.DNATested.mutation(self.DNATested.getGene(STATEGENE), STATEGENE))
+
         else:
             stateChild = None
             
@@ -505,14 +504,12 @@ class AgentMind:
             novelParents = self.noveltyFoundSelect(exploreGenes)
             newGene = []
             if len(novelParents) > 0:
-                for y in range(len(novelParents[0].genotype)):
-                    randGene = random.randint(0, len(novelParents) - 1)
-                    newGene.append(novelParents[randGene].genotype[y])
+                geneSegment = self.DNATested.crossoverProduction(novelParents, EXPLOREGENE)
+                newGene.append(geneSegment)
                 exploreChild = Gene(newGene)
                 # exploreChild = Gene(newGene).mutate()
             else:
-                exploreChild = Gene(self.DNATested.getGene(EXPLOREGENE).genotype)  
-                exploreChild.largeMutate()
+                exploreChild = Gene(self.DNATested.mutation(self.DNATested.getGene(EXPLOREGENE), EXPLOREGENE))
         else:
             exploreChild = None
         

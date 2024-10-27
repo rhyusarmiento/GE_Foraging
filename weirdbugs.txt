@@ -150,3 +150,49 @@ Traceback (most recent call last):
   File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 210, in removeObject
     positionSet.remove(object)
 KeyError: <Environment.AgentBody object at 0x000001B838148950>
+
+
+Exception in thread Thread-31 (evoTimer):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 724, in evoTimer
+    self.world.evoAgents(foodAcclerAvg, foodVelocityAvg, self.center, self.intervalFood)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 42, in evoAgents
+    object.agentBrain.actUpdateState()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 476, in actUpdateState
+    self.generate_StateMachineTesting()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 333, in generate_StateMachineTesting
+    self.StateMachineTesting.createStateMachine(self.StatePhenotypeTesting, self.DNATesting.getGene(STATEGENE).genotype, inputsAvailable)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\StateMachine.py", line 152, in createStateMachine
+    currState = fillQueue.pop(0)
+                ^^^^^^^^^^^^^^^^
+IndexError: pop from empty list
+
+
+
+Exception in thread Thread-31 (evoTimer):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 724, in evoTimer
+    self.world.evoAgents(foodAcclerAvg, foodVelocityAvg, self.center, self.intervalFood)
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Environment.py", line 38, in evoAgents
+    object.agentBrain.actUpdateState()
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 472, in actUpdateState
+    newDNA = self.getDNAStateChild()
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 448, in getDNAStateChild
+    stateChild = Gene(self.DNATested.mutation(self.DNATested.getGene(STATEGENE), STATEGENE))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Gene.py", line 95, in mutation
+    self.genoAppendSearch(codonIndex, disectBlock, graphID, insertCodon, gene.genotype)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Gene.py", line 66, in genoAppendSearch
+    nextnode = self.stateGraph.find_for_crossover(currentCodon)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: GGraph.find_for_crossover() missing 1 required positional argument: 'inputCodon'
