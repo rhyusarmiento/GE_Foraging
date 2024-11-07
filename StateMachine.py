@@ -13,6 +13,7 @@ class StateMachine:
         self.KnownStates = []
         self.CurrentState = None
         self.currentCodon = 0
+        self.availableInputs = ["isDone", "isFood", "isTired", "isHungry", "isBored"]
     
     def initGetState(self, command, inputs):
         if command == "Pick":
@@ -49,7 +50,7 @@ class StateMachine:
             return None
         
     # this fuction sometimes has long runtime because of a possible infinte loop
-    def createStateMachine(self, phenotype, genotype, availableInputs):
+    def createOldStateMachine(self, phenotype, genotype, availableInputs):
         # print(phenotype)
         # print(availableInputs)
         commandList = phenotype.replace(",", " ").split()
@@ -148,7 +149,7 @@ class StateMachine:
                 currState.inputState(inputType, state)
                 if not state.isFull():
                     fillQueue.append(state)
-                if currState.isFull():
+                if currState.isFull() and len(fillQueue) > 0:
                     currState = fillQueue.pop(0)
             elif "(" not in command and ")" not in command:
                 stateStack.append(command)
@@ -156,9 +157,10 @@ class StateMachine:
         commandIncr = 0
         commandList.insert(0, holdState)
         # print(f"bro {inputNum}")
-        bootleg = 0
+        
+        stateStackFiller = 0
         while len(fillQueue) > 0 or not currState.isFull():
-            if (len(stateStack) > 0 or bootleg == 0) and (len(stateStack) > 0 and bootleg == 0):
+            if len(stateStack) > 0 and stateStackFiller == 0:
                 if commandIncr >= len(commandList) - 1:
                     commandIncr = 0
                 else:
@@ -236,15 +238,148 @@ class StateMachine:
                     stateStack.append(currCommand)
             else:
                 if len(stateStack) == 0:
-                    bootleg = bootleg + inputNum
+                    stateStackFiller = stateStackFiller + inputNum
                 if commandIncr >= len(commandList) - 1:
                     commandIncr = 0
                 else:
                     commandIncr += 1
                 currCommand = commandList[commandIncr]
                 if "(" not in currCommand and ")" not in currCommand:
-                    bootleg -= 1    
+                    stateStackFiller -= 1    
                     stateStack.append(currCommand)
+        
+    def createStateMachine(self, phenotype):
+        commandList = phenotype.replace(",", " ").split()
+        displayNum = 1
+        fillQueue = []
+        holdState = None
+        firstState = commandList.pop(0)
+        currState = self.initGetState(firstState, self.availableInputs)
+            
+        holdState = currState
+        fillQueue.append(currState)
+        for command in commandList:
+            displayNum += 1
+            if command == "Pick":
+                state = Pick(displayNum, self.availableInputs)
+                self.PickStates.append(state)
+            elif command == "Drop":
+                state = Drop(displayNum, self.availableInputs)
+                self.DropStates.append(state)
+            elif command == "Consume":
+                state = Consume(displayNum, self.availableInputs)
+                self.ConsumeStates.append(state)
+            elif command == "Explore":
+                state = Explore(displayNum, self.availableInputs)
+                self.ExploreStates.append(state)
+            elif command == "Den":
+                state = Den(displayNum, self.availableInputs)
+                self.DenStates.append(state)
+            elif command == "Known":
+                state = Known(displayNum, self.availableInputs)
+                self.KnownStates.append(state)
+                
+            currState.inputState(self.availableInputs[0], state)
+            fillQueue.append(state)
+            currState = state
+        
+        commandList.insert(0, firstState)
+        currState.inputState(self.availableInputs[0], holdState)
+        commandIndex = 0
+        for currState in fillQueue:
+            inputIndex = 1
+            searchIndex = commandIndex
+            PickIndex = len(self.PickStates) - 1
+            DropIndex = len(self.DropStates) - 1
+            ConsumeIndex = len(self.ConsumeStates) - 1
+            ExploreIndex = len(self.ExploreStates) - 1
+            KnownIndex = len(self.KnownStates) - 1
+            DenIndex = len(self.DenStates) - 1
+            while inputIndex < len(self.availableInputs):
+                searchIndex += 1
+                inputType = self.availableInputs[inputIndex]
+                command = commandList[searchIndex]
+                if command == "Pick":
+                    if PickIndex < 0:
+                        PickIndex = len(self.PickStates) - 1
+                    if len(self.PickStates) == 1:
+                        state = self.PickStates[PickIndex]
+                    else:
+                        state = self.PickStates[PickIndex]
+                        while state == currState:
+                            PickIndex -= 1
+                            if PickIndex < 0:
+                                PickIndex = len(self.PickStates) - 1
+                            state = self.PickStates[PickIndex]
+                        PickIndex -= 1
+                elif command == "Drop":
+                    if DropIndex < 0:
+                        DropIndex = len(self.DropStates) - 1
+                    if len(self.DropStates) == 1:
+                        state = self.DropStates[DropIndex]
+                    else:
+                        state = self.DropStates[DropIndex]
+                        while state == currState:
+                            DropIndex -= 1
+                            if DropIndex < 0:
+                                DropIndex = len(self.DropStates) - 1
+                            state = self.DropStates[DropIndex]
+                        DropIndex -= 1
+                elif command == "Consume":
+                    if ConsumeIndex < 0:
+                        ConsumeIndex = len(self.ConsumeStates) - 1
+                    if len(self.ConsumeStates) == 1:
+                        state = self.ConsumeStates[ConsumeIndex]
+                    else:
+                        state = self.ConsumeStates[ConsumeIndex]
+                        while state == currState:
+                            ConsumeIndex -= 1
+                            if ConsumeIndex < 0:
+                                ConsumeIndex = len(self.ConsumeStates) - 1
+                            state = self.ConsumeStates[ConsumeIndex]
+                        ConsumeIndex -= 1
+                elif command == "Explore":
+                    if ExploreIndex < 0:
+                        ExploreIndex = len(self.ExploreStates) - 1
+                    if len(self.ExploreStates) == 1:
+                        state = self.ExploreStates[ExploreIndex]
+                    else:
+                        state = self.ExploreStates[ExploreIndex]
+                        while state == currState:
+                            ExploreIndex -= 1
+                            if ExploreIndex < 0:
+                                ExploreIndex = len(self.ExploreStates) - 1
+                            state = self.ExploreStates[ExploreIndex]
+                        ExploreIndex -= 1
+                elif command == "Den":
+                    if DenIndex < 0:
+                        DenIndex = len(self.DenStates) - 1
+                    if len(self.DenStates) == 1:
+                        state = self.DenStates[DenIndex]
+                    else:
+                        state = self.DenStates[DenIndex]
+                        while state == currState:
+                            DenIndex -= 1
+                            if DenIndex < 0:
+                                DenIndex = len(self.DenStates) - 1
+                            state = self.DenStates[DenIndex]
+                        DenIndex -= 1
+                elif command == "Known":
+                    if KnownIndex < 0:
+                        KnownIndex = len(self.KnownStates) - 1
+                    if len(self.KnownStates) == 1:
+                        state = self.KnownStates[KnownIndex]
+                    else:
+                        state = self.KnownStates[KnownIndex]
+                        while state == currState:
+                            KnownIndex -= 1
+                            if KnownIndex < 0:
+                                KnownIndex = len(self.KnownStates) - 1
+                            state = self.KnownStates[KnownIndex]
+                        KnownIndex -= 1
+                    
+                inputIndex += 1
+                currState.inputState(inputType, state)
                 
     def printStateMachine(self):
         num = 0

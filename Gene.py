@@ -45,57 +45,77 @@ class DNAManager:
         for key in self.Genes:
             self.Genes[key].mutate()
             
-    def crossoverProduction(self, parentGenes, graphID):
+    def crossoverProduction(self, parentGenes, myGene, graphID):
         newGenotype = []
         codonIndex = 0
-        while codonIndex < len(parentGenes[0].genotype):
+        while codonIndex < len(myGene.genotype):
             randGeneIndex = random.randint(0, len(parentGenes) - 1)
             currentParent = parentGenes[randGeneIndex]
             disectBlock = []
             currentCodon = currentParent.genotype[codonIndex]
             if graphID == STATEGENE:
-                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)            
+                if currentCodon % self.stateGraph.nodesSize == myGene.genotype[codonIndex] % self.stateGraph.nodesSize:
+                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                else:
+                    disectBlock.append(myGene.genotype[codonIndex])
+                    codonIndex += 1     
             elif graphID == EXPLOREGENE:
-                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
-            newGenotype.append(disectBlock)
+                if currentCodon % self.behaviorGraph.nodesSize == myGene.genotype[codonIndex] % self.behaviorGraph.nodesSize:
+                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                else:
+                    disectBlock.append(myGene.genotype[codonIndex])
+                    codonIndex += 1  
+            newGenotype.extend(disectBlock)
+        if len(newGenotype) > 300:
+            print(f"houston {newGenotype}")
         return newGenotype
     
     def genoAppendSearch(self, codonIndex, disectBlock, graphID, currentCodon, geno):
         if not codonIndex + 1 >= len(geno):
+            if codonIndex > len(geno):
+                print(codonIndex)
+                
             if graphID == STATEGENE:
-                nextnode = self.stateGraph.find_for_crossover(currentCodon)
+                currentNode = self.stateGraph.nodeIndex[currentCodon % self.stateGraph.nodesSize]
+                nextnode = self.stateGraph.find_for_crossover(currentCodon, geno[codonIndex + 1])
             elif graphID == EXPLOREGENE:
-                nextnode = self.behaviorGraph.find_for_crossover(currentCodon)
+                currentNode = self.behaviorGraph.nodeIndex[currentCodon % self.behaviorGraph.nodesSize]
+                nextnode = self.behaviorGraph.find_for_crossover(currentCodon, geno[codonIndex + 1])
 
             if nextnode is False:
                 disectBlock.append(currentCodon)
                 codonIndex += 1
                 currentCodon = geno[codonIndex]
                 self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
-            else:
+            elif nextnode is not None:
                 if nextnode.isTerminal:
                     disectBlock.append(currentCodon)
                     codonIndex += 1
+                    currentCodon = geno[currentCodon]
+                    disectBlock.append(currentCodon)
                 else:
                     disectBlock.append(currentCodon)
                     codonIndex += 1
                     currentCodon = geno[codonIndex]
                     self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
-                    
-    def mutation(self, gene, graphID):
+            elif currentNode.isTermminal:
+                disectBlock.append(currentCodon)
+                codonIndex += 1
+            
+    # mutation fix remove geno expanition
+    def mutation(self, gene):
         newGenotype = []
         codonIndex = 0
         while codonIndex < len(gene.genotype):
             insertCodon = gene.mutateValue(codonIndex)
             if insertCodon is False:
+                newGenotype.append(gene.genotype[codonIndex])
                 codonIndex += 1
             else: 
-                disectBlock = []
-                if graphID == STATEGENE:
-                    self.genoAppendSearch(codonIndex, disectBlock, graphID, insertCodon, gene.genotype)            
-                elif graphID == EXPLOREGENE:
-                    self.genoAppendSearch(codonIndex, disectBlock, graphID, insertCodon, gene.genotype)
-                newGenotype.append(disectBlock)
+                newGenotype.append(insertCodon)
+                codonIndex += 1
+        if len(newGenotype) > 300:
+            print(f"houston {newGenotype}")
         return newGenotype
         
 class Gene:
@@ -111,21 +131,22 @@ class Gene:
     # A recursive function that evaluates non-terminals in a string in a depth-first search.
     def parse_expression(rules, expression, gene, terminal_string):
         non_terminals = re.findall("<[^>]+>", expression)
+        # gene genotype len explostion therefore not reaching ending w
         for non_terminal in non_terminals:
-                if gene.current_codon >= len(gene.genotype):
-                    return terminal_string
+            if gene.current_codon >= len(gene.genotype):
+                return terminal_string
                 
-                response = rules.find_by_mod(non_terminal, gene)
-                if response is None:
-                    return terminal_string
-                else:
-                    production = response
+            response = rules.find_by_mod(non_terminal, gene)
+            if response is None:
+                return terminal_string
+            else:
+                production = response
                     
-                # substitute the non-terminal with the decided on production
-                terminal_string = re.sub(non_terminal, production, terminal_string, 1)
-                gene.current_codon += 1
-                # repeat on the non-terminals in the production
-                terminal_string = Gene.parse_expression(rules, production, gene, terminal_string)
+            # substitute the non-terminal with the decided on production
+            terminal_string = re.sub(non_terminal, production, terminal_string, 1)
+            gene.current_codon += 1
+            # repeat on the non-terminals in the production
+            terminal_string = Gene.parse_expression(rules, production, gene, terminal_string)
         return terminal_string
                 
     def finish_expression(rules, gene, terminal_string):
@@ -143,10 +164,13 @@ class Gene:
     
     # Generates the program/expression represented by the gene i.e. the phenotype.
     def generate_phenotype(self, rules, start_symbol, genetype):
+        if len(self.genotype) > 300:
+            print(f"{self.genotype}")
         expression = Gene.parse_expression(rules, start_symbol, self, start_symbol)
         # print(expression)
         self.current_codon = 0
         expression = Gene.finish_expression(rules, self, expression)
+        self.current_codon = 0
         return expression
     
     def mutateValue(self, num):

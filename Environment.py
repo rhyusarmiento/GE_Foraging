@@ -1,5 +1,5 @@
 from const import ENVIORN_DIM, ENVIORNTEST, TESTFOOD, WORLDFILL, DENBORDERSIZE, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE, TOTALFOOD #FOODPERCENT,
-from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC, NUMAGENTS
+from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC
 from const import NORTH, AGENT, FOOD, DEN, WEST, EAST, SOUTH, ISDONE
 import pygame as pyg
 import numpy as np
@@ -21,26 +21,6 @@ class Environment:
         self.size = ENVIORN_DIM
         self.sprites = pyg.sprite.Group()
         self.rendering = False
-    
-    def evoAgents(self, foodAcc, foodVel, baseCenter, baseFoodInterval):
-        numVel = 0
-        numBase = 0
-        isDead = 0
-        for object in self.objects.copy():
-            if object.who() == DEN:
-                print(f"know locations {object.foodLocations}")   
-            if object.who() == AGENT:
-                if object.agentBrain.running is False:
-                    isDead += 1
-                if foodVel == 0 or foodAcc < 0:
-                    numVel += 1
-                    object.agentBrain.sense()
-                    object.agentBrain.actUpdateState()
-                elif object.center == baseCenter and baseFoodInterval / NUMAGENTS >= object.foodDepositInterval:
-                    numBase += 1
-                    object.agentBrain.sense()
-                    object.agentBrain.actUpdateState()
-        print(f"numVel {numVel} numbaseEvo {numBase} not running {isDead}")
                         
     def startPyGame(self):
         pyg.init()
@@ -296,7 +276,7 @@ class ObjectWraper:
         return self.world.numFood
     
     def removeWorldObject(self, object):
-        print(f"remove food {object}")
+        # print(f"remove food {object}")
         self.world.removeObject(object)
         
     def addWorldObject(self, item):
@@ -431,7 +411,7 @@ class AgentBody(ObjectWraper):
         for item in garbage:
             self.removeWorldObject(item)
             self.home.removeFoodLocation(item)
-            print(f"agent {self} pick food {item}")
+            # print(f"agent {self} pick food {item}")
                         
     def pick(self):
         visionRadius = self.vision // 2
@@ -706,6 +686,8 @@ class Den(ObjectWraper):
         self.foodStored = 0
         self.intervalFood = 0
         self.lastFoodVelAvg = 0
+        self.CurrentFoodVelocityAvg = 0
+        self.CurrentFoodAcclerAvg = 0
         self.color = DENCOLOR
         self.foodLocations = set()
     
@@ -718,11 +700,10 @@ class Den(ObjectWraper):
         while self.world.rendering:
             numSec += 1
             if numSec == EVO_SEC:
-                foodVelocityAvg = self.intervalFood / EVO_SEC
-                foodAcclerAvg = (foodVelocityAvg - self.lastFoodVelAvg) / EVO_SEC
+                self.CurrentFoodVelocityAvg = self.intervalFood / EVO_SEC
+                self.CurrentFoodAcclerAvg = (self.CurrentFoodVelocityAvg - self.lastFoodVelAvg) / EVO_SEC
                 # Formula check done
-                self.world.evoAgents(foodAcclerAvg, foodVelocityAvg, self.center, self.intervalFood)
-                self.lastFoodVelAvg = foodVelocityAvg
+                self.lastFoodVelAvg = self.CurrentFoodVelocityAvg
                 self.intervalFood = 0 
                 numSec = 0
             clock.tick(60)

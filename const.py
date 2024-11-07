@@ -12,7 +12,7 @@ FOODPERCENT = 130
 FOODCOLOR = (0, 255, 0)
 FOODSIZE = 6
 DENCOLOR = (0, 255, 255)
-NUMAGENTS = 30
+NUMAGENTS = 10
 
 # Agent body Simulation
 HUNGER = 100
@@ -32,11 +32,11 @@ EVO_TIMER = 70
 EVO_LIMIT = 50
 ENVIORNTEST = 50
 TESTFOOD = 20
-TERMINALLIMIT = 5000
+TERMINALLIMIT = 3500
 
 # Agent Evolution
-EVO_SEC = 200
-GENE_LEN = 300
+EVO_SEC = 250
+GENE_LEN = 200
 GENE_FIRSTCUT = .2
 GENE_SECONDCUT = .6
 GENE_THIRDCUT = .8
@@ -61,11 +61,18 @@ EXPLORE_RULES = {
     "<run2>": ["func2(<node>,<node>,<node>)"],
     "<condition>": ["ifFood(isFood,<node>)", "ifFood(<node>,<node>)"]
 }
-STATE_RULES = {
+OLD_STATE_RULES = {
     "<start>": ["<start>", "<SM>"],
     "<SM>": ["<stateID>,<SM>", "(<inputtype>),<SM>"],
     "<stateID>": ["Pick", "Drop", "Consume", "Explore", "Den", "Known"],
     "<inputtype>": ["isFood", "isTired", "isHungry", "isBored", "isDone"]
+}
+
+
+STATE_RULES = {
+    "<start>": ["<start>", "<SM>"],
+    "<SM>": ["<stateID>,<SM>"],
+    "<stateID>": ["Pick", "Drop", "Consume", "Explore", "Den", "Known"]
 }
 
 # Data Constants

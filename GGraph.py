@@ -1,5 +1,5 @@
 import re
-from const import EXPLORE_RULES
+from const import EXPLORE_RULES, STATE_RULES
 
 class GGraph:
     def __init__(self, rules):
@@ -12,6 +12,7 @@ class GGraph:
     def setNodeIndex(self):
         num = 0
         for node in self.Nodes:
+            node.indexValue = num
             self.nodeIndex[num] = node
             num += 1
         
@@ -64,9 +65,9 @@ class GGraph:
                 branchNode.appendInNode(trunckNode)
                 non_terminals = re.findall("<[^>]+>", production)
                 nonTerminalSet = set()
-                nonTerminalSet.add(trunckNode.value)
                 for non_terminal in non_terminals:
-                    nonTerminalSet.add(non_terminal)
+                    if non_terminal != branchNode.value:
+                        nonTerminalSet.add(non_terminal)
                 for non_terminal in nonTerminalSet:
                     currNode = self.selectNode(non_terminal)
                     branchNode.appendOutNode(currNode)
@@ -85,22 +86,31 @@ class GGraph:
     def find_by_mod(self, rule, gene):
         productions = self.getNode(rule).outNodes
         codon = gene.get_codon()
+        # if type(codon) == list:
+        #     print(f"this is bad {codon} type why {type(codon)}")
+        # print(f"nodessize {type(self.nodesSize)}")
         modValue = codon % self.nodesSize
-        while modValue >= len(productions):
+        # print(f"modvalue {type(modValue)}")
+        productionValue = None
+        while productionValue is None:
+            for production in productions:
+                if production.indexValue == modValue:
+                    productionValue = production.value
             gene.current_codon += 1
-            if gene.current_codon >= len(gene.genotype):
-                return None
-            codon = gene.get_codon()
-            modValue = codon % self.nodesSize
-        return productions[codon % self.nodesSize].value
+            if gene.current_codon >= len(gene.genotype):   
+                return None 
+            modValue = gene.get_codon() % self.nodesSize
+        return productionValue
     
-    def find_for_crossover(self, inputCodon):
+    # Fix
+    def find_for_crossover(self, inputCodon, nextCodon):
         node = self.nodeIndex[inputCodon % self.nodesSize]
         productions = node.outNodes
-        if inputCodon % self.nodesSize >= len(productions):
-            return False
-        else:
-            return productions[inputCodon % self.nodesSize]
+        productionNode = False
+        for production in productions:
+            if production.indexValue == nextCodon % self.nodesSize:
+                productionNode = production
+        return productionNode
             
     def weight_traveral(self, Node, codon):
         if Node.isTerminal is True:
@@ -139,6 +149,7 @@ class Node:
         # termial in this context means that there is no <> non terminals in the statement
         self.inNodes = []
         self.outNodes = []
+        self.indexValue = 0
         self.value = inValue
         if "<" not in inValue and ">" not in inValue:
             self.isTerminal = True
@@ -151,8 +162,11 @@ class Node:
         self.inNodes.append(node)
 
 if __name__ == "__main__":
-    ggraph = GGraph(EXPLORE_RULES)
-    ggraph.printGraph()
+    ggraphstate = GGraph(STATE_RULES)
+    ggraphstate.printGraph()
+    print("next ggraph")
+    ggraphexplore = GGraph(EXPLORE_RULES)
+    ggraphexplore.printGraph()
     # print(ggraph.find_by_mod('<progs>', 32))
     # print(ggraph.find_by_weight('<code>', 32))
     
