@@ -12,14 +12,15 @@ lock_food = threading.Lock()
 lock_den = threading.Lock()
 lock_object = threading.Lock()
 lock_denFood = threading.Lock()
+lock_move = threading.Lock()
 
 class Environment:
     def __init__(self):
         self.objects = set()
-        self.positions = {}
+        self.mapPositions = {}
         self.numFood = 0
         self.size = ENVIORN_DIM
-        self.sprites = pyg.sprite.Group()
+        # self.sprites = pyg.sprite.Group()
         self.rendering = False
                         
     def startPyGame(self):
@@ -123,6 +124,8 @@ class Environment:
             self.numFood -= food
                                 
     def addNewObject(self, item):
+        # if item.who() == AGENT:
+        #     print("bro")
         newObject = item
         positions = []
         radius = item.size // 2
@@ -133,8 +136,6 @@ class Environment:
         yCurr = yStart
         xEnd = xStart + (2 * radius)
         yEnd = yStart + (2 * radius)
-        # TODO: location problem adding more spots than needed aka from 0
-        # TODO: Adding masive food list big bug, also mulitiple agents
         # get new positions
         while xCurr <= xEnd:
             while yCurr <= yEnd:
@@ -152,7 +153,8 @@ class Environment:
         # add new object
         for newPosition in positions:
             newObject.addPosition(newPosition)
-            positionSet = self.positions.setdefault(newPosition, set())
+            with lock_move:
+                positionSet = self.mapPositions.setdefault(newPosition, set())
             positionSet.add(newObject)
         self.objects.add(newObject)
         
@@ -178,44 +180,53 @@ class Environment:
                     self.objects.remove(object)
                     # print(f'bang {object}')
                     for position in object.positions:
-                        positionSet = self.positions[position]
+                        positionSet = self.mapPositions[position]
                         positionSet.remove(object)
-                        if len(self.positions[position]) == 0:
-                            del self.positions[position]
+                        if len(self.mapPositions[position]) == 0:
+                            del self.mapPositions[position]
         else:
-            self.objects.remove(object)
             # print(f'bang {object}')
             for position in object.positions:
-                positionSet = self.positions[position]
-                positionSet.remove(object)
-                if len(self.positions[position]) == 0:
-                    del self.positions[position]
+                if position not in self.mapPositions:
+                    print(f"not here {position}")
+                # why wouldn't an agent position be recorded in the positions
+                with lock_move:
+                    positionSet = self.mapPositions.get(position)
+                    if positionSet is None:
+                        print(f"not here {position}")
+                    positionSet.remove(object)
+                    if len(positionSet) == 0:
+                        self.mapPositions.pop(position)
+            self.objects.remove(object)
         
     # TODO: location problem
     def addObject(self, object, objectPositions):
         self.objects.add(object)
         for position in objectPositions:
-            positionSet = self.positions.setdefault(position, set())
+            with lock_move:
+                positionSet = self.mapPositions.setdefault(position, set())
             positionSet.add(object)
     
     def isObjectByLocation(self, location):
         x,y = location
         cleanLocation = (self.cleanCor(x), self.cleanCor(y))
-        if cleanLocation in self.positions:
+        if cleanLocation in self.mapPositions:
             return True
         return False
     
     def getObjectsByLocation(self, location):
         x,y = location
         cleanLocation = (self.cleanCor(x), self.cleanCor(y))
-        if cleanLocation in self.positions:
-            return self.positions[cleanLocation]
+        if cleanLocation in self.mapPositions:
+            return self.mapPositions[cleanLocation]
         return None
     
 class ObjectWraper:
     def __init__(self, environment, location):
         self.positions = []
         self.world = environment
+        self.movedNum = 0
+        self.lastMove = ""
         self.center = (self.world.cleanCor(location[0]), self.world.cleanCor(location[1]))
         
     def addPosition(self, position):
@@ -230,11 +241,13 @@ class ObjectWraper:
     def seeLocation(self, location):
         return self.world.getObjectsByLocation(location)
         
-    def moveTo(self, newPositions):
+    def moveTo(self, newPositions, dir):
         self.world.removeObject(self)
         self.positions.clear()
         self.positions.extend(newPositions)
         self.world.addObject(self, self.positions)
+        self.movedNum =+ 1
+        self.lastMove = dir
         
     def moveNorth(self):
         newPositions = []
@@ -243,7 +256,7 @@ class ObjectWraper:
         for position in self.positions:
             newPositions.append(tuple((position[0], self.world.cleanCor(position[1] + MOVEMENTSPEED))))
         
-        self.moveTo(newPositions)
+        self.moveTo(newPositions, "north")
 
     def moveSouth(self):
         newPositions = []
@@ -252,7 +265,7 @@ class ObjectWraper:
         for position in self.positions:
             newPositions.append(tuple((position[0], self.world.cleanCor(position[1] - MOVEMENTSPEED))))
         
-        self.moveTo(newPositions)
+        self.moveTo(newPositions, "south")
         
     def moveWest(self):
         newPositions = []
@@ -261,7 +274,7 @@ class ObjectWraper:
         for position in self.positions:
             newPositions.append(tuple((self.world.cleanCor(position[0] - MOVEMENTSPEED), position[1])))
         
-        self.moveTo(newPositions)
+        self.moveTo(newPositions, "west")
 
     def moveEast(self):
         newPositions = []
@@ -270,7 +283,7 @@ class ObjectWraper:
         for position in self.positions:
             newPositions.append(tuple((self.world.cleanCor(position[0] + MOVEMENTSPEED), position[1])))
         
-        self.moveTo(newPositions)
+        self.moveTo(newPositions, "east")
         
     def getWorldFood(self):
         return self.world.numFood
@@ -589,7 +602,18 @@ class AgentBody(ObjectWraper):
                 self.hunger -= .5
                 currLocation = self.center
                 clock.tick(100)
-            return "continue"
+                
+            self.home.depositFood(self.numFood)
+            self.foodDepositInterval += self.numFood
+            if self.numFood > 0:
+                print(f"deposit {self.numFood}")
+            self.numFood = 0
+            
+            while self.home.isfeed() and self.hunger < HUNGER:
+                # self.home.eatFood()
+                self.hunger += 10
+                
+            return ISDONE
         else:
             self.home.depositFood(self.numFood)
             self.foodDepositInterval += self.numFood
@@ -606,7 +630,6 @@ class AgentBody(ObjectWraper):
     def getHomeFoodSize(self):
         return len(self.home.foodLocations.copy())    
         
-    # FIX: seems as though agent is stuck looking for a food that doesn't exist or cant reach.
     def known(self):
         currLocation = self.center
         destination = self.home.getFoodLocation().center
@@ -753,16 +776,16 @@ if __name__ == "__main__":
     
     envir.removeObject(base)
     
-    for position in envir.positions:
-        print(f'envir {position} {envir.positions[position]}')
+    for position in envir.mapPositions:
+        print(f'envir {position} {envir.mapPositions[position]}')
     
     for spot in food.positions:
         print(f'food {spot}')
     
     food.moveEast()
     
-    for position in envir.positions:
-        print(f'envir {position} {envir.positions[position]}')
+    for position in envir.mapPositions:
+        print(f'envir {position} {envir.mapPositions[position]}')
     
     for spot in food.positions:
         print(f'food {spot}')

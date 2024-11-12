@@ -288,7 +288,7 @@ class StateMachine:
         commandIndex = 0
         for currState in fillQueue:
             inputIndex = 1
-            searchIndex = commandIndex
+            searchIndex = commandIndex + 1
             PickIndex = len(self.PickStates) - 1
             DropIndex = len(self.DropStates) - 1
             ConsumeIndex = len(self.ConsumeStates) - 1
@@ -296,7 +296,8 @@ class StateMachine:
             KnownIndex = len(self.KnownStates) - 1
             DenIndex = len(self.DenStates) - 1
             while inputIndex < len(self.availableInputs):
-                searchIndex += 1
+                if searchIndex >= len(commandList):
+                    searchIndex = 0
                 inputType = self.availableInputs[inputIndex]
                 command = commandList[searchIndex]
                 if command == "Pick":
@@ -377,9 +378,10 @@ class StateMachine:
                                 KnownIndex = len(self.KnownStates) - 1
                             state = self.KnownStates[KnownIndex]
                         KnownIndex -= 1
-                    
+                searchIndex += 1   
                 inputIndex += 1
                 currState.inputState(inputType, state)
+            commandIndex += 1
                 
     def printStateMachine(self):
         num = 0

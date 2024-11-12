@@ -17,11 +17,15 @@ class DNAManager:
     def addGene(self, name, gene=None):
         if gene is None:
             genelist = []
-            for x in range(GENE_LEN):
-                num = random.randint(0, 60)
-                while num == 0:
-                    num = random.randint(0, 60)
-                genelist.append(num)
+            if name == STATEGENE:
+                for x in range(GENE_LEN):
+                    num = random.randint(0, self.stateGraph.nodesSize)
+                    genelist.append(num)
+            elif name == EXPLOREGENE:
+                for x in range(GENE_LEN):
+                    num = random.randint(0, self.behaviorGraph.nodesSize)
+                    genelist.append(num)
+            
             gene = Gene(genelist)
         self.Genes[name] = gene
         
@@ -55,68 +59,99 @@ class DNAManager:
             currentCodon = currentParent.genotype[codonIndex]
             if graphID == STATEGENE:
                 if currentCodon % self.stateGraph.nodesSize == myGene.genotype[codonIndex] % self.stateGraph.nodesSize:
-                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                    newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                    codonIndex += newIndex
                 else:
                     disectBlock.append(myGene.genotype[codonIndex])
                     codonIndex += 1     
             elif graphID == EXPLOREGENE:
                 if currentCodon % self.behaviorGraph.nodesSize == myGene.genotype[codonIndex] % self.behaviorGraph.nodesSize:
-                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                    newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                    codonIndex += newIndex
                 else:
                     disectBlock.append(myGene.genotype[codonIndex])
                     codonIndex += 1  
+            if len(newGenotype) > len(myGene.genotype):
+                print(f"houston deadloop {newGenotype}")
+                
             newGenotype.extend(disectBlock)
-        if len(newGenotype) > 300:
-            print(f"houston {newGenotype}")
+        if len(newGenotype) > GENE_LEN:
+            print(f"houston crossover {newGenotype}")
         return newGenotype
     
-    def genoAppendSearch(self, codonIndex, disectBlock, graphID, currentCodon, geno):
-        if not codonIndex + 1 >= len(geno):
-            if codonIndex > len(geno):
+    def genoAppendSearch(self, codonIndex, disectBlock, graphID, currentCodon, parentGeno):
+        if not codonIndex + 1 >= len(parentGeno):
+            if codonIndex > len(parentGeno):
                 print(codonIndex)
                 
             if graphID == STATEGENE:
+                # I have an issue with the mod value. the number bounds and size matter for each
                 currentNode = self.stateGraph.nodeIndex[currentCodon % self.stateGraph.nodesSize]
-                nextnode = self.stateGraph.find_for_crossover(currentCodon, geno[codonIndex + 1])
+                nextnode = self.stateGraph.find_for_crossover(currentCodon, parentGeno[codonIndex + 1])
             elif graphID == EXPLOREGENE:
                 currentNode = self.behaviorGraph.nodeIndex[currentCodon % self.behaviorGraph.nodesSize]
-                nextnode = self.behaviorGraph.find_for_crossover(currentCodon, geno[codonIndex + 1])
+                nextnode = self.behaviorGraph.find_for_crossover(currentCodon, parentGeno[codonIndex + 1])
 
             if nextnode is False:
                 disectBlock.append(currentCodon)
                 codonIndex += 1
-                currentCodon = geno[codonIndex]
-                self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
+                currentCodon = parentGeno[codonIndex]
+                codonIndex += self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
+                return codonIndex
             elif nextnode is not None:
                 if nextnode.isTerminal:
                     disectBlock.append(currentCodon)
                     codonIndex += 1
-                    currentCodon = geno[currentCodon]
+                    currentCodon = parentGeno[codonIndex]
                     disectBlock.append(currentCodon)
+                    return codonIndex
                 else:
                     disectBlock.append(currentCodon)
                     codonIndex += 1
-                    currentCodon = geno[codonIndex]
-                    self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, geno)
+                    currentCodon = parentGeno[codonIndex]
+                    codonIndex += self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
+                    return codonIndex
             elif currentNode.isTermminal:
                 disectBlock.append(currentCodon)
                 codonIndex += 1
+                return codonIndex
             
     # mutation fix remove geno expanition
-    def mutation(self, gene):
+    def mutation(self, gene, graphid):
         newGenotype = []
         codonIndex = 0
         while codonIndex < len(gene.genotype):
-            insertCodon = gene.mutateValue(codonIndex)
+            insertCodon = self.mutateValue(codonIndex, graphid, gene.genotype)
             if insertCodon is False:
                 newGenotype.append(gene.genotype[codonIndex])
                 codonIndex += 1
             else: 
                 newGenotype.append(insertCodon)
                 codonIndex += 1
-        if len(newGenotype) > 300:
-            print(f"houston {newGenotype}")
+        if len(newGenotype) > GENE_LEN:
+            print(f"houston mutation {newGenotype}")
         return newGenotype
+
+    def mutateValue(self, num, graphid, genotype):
+        if graphid == STATEGENE:    
+            if random.randint(1,100) > (100 * (MUTATION_RATE)):
+                return random.randint(0, self.stateGraph.nodesSize)
+            else:
+                return False
+        elif graphid == EXPLOREGENE:
+            if num < (len(genotype) * GENE_FIRSTCUT):
+                if random.randint(1,100) > (100 * MUTATION_RATE):
+                    return random.randint(0, self.behaviorGraph.nodesSize)
+            elif num < (len(genotype) * GENE_SECONDCUT):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_FIRSTDECUT)):
+                    return random.randint(0, self.behaviorGraph.nodesSize)
+            elif num < (len(genotype) * GENE_THIRDCUT):
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_SECONDDECUT)):
+                    return random.randint(0, self.behaviorGraph.nodesSize)
+            else:
+                if random.randint(1,100) > (100 * (MUTATION_RATE - MUTATION_THIRDDECUT)):
+                    return random.randint(0, self.behaviorGraph.nodesSize)
+            return False
         
 class Gene:
     def __init__(self, genotype) -> None:
@@ -173,7 +208,7 @@ class Gene:
         self.current_codon = 0
         return expression
     
-    def mutateValue(self, num):
+    def mutateValue(self, num, graphid):
         newGeno = self.genotype.copy()
         if num < (len(newGeno) * GENE_FIRSTCUT):
             if random.randint(1,100) > (100 * MUTATION_RATE):

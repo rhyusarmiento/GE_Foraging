@@ -2,7 +2,7 @@ import random
 from BehaviorTree import BehaviorTree
 from StateMachine import StateMachine
 from const import DEAD, ISHUNGRY, ISDONE, ISBORED, ISFOOD, ISTIRED, FUNC2, AGENTCOLOR, BLACK, BLUE, YELLOW, ORAGNE, PURPLE
-from const import EXPLOREGENE, STATEGENE, ENVIORNTEST, EVO_LIMIT, TERMINALLIMIT, EVO_SEC
+from const import EXPLOREGENE, STATEGENE, ENVIORNTEST, EVO_LIMIT, TERMINALLIMIT, EVO_SEC, GENE_LEN
 from const import NOVELTYSTANDARD, POPLUATIONTOLERANCE, NUMAGENTS
 from Gene import Gene
 from Environment import Environment, AgentBody, Den
@@ -49,6 +49,8 @@ class AgentMind:
         self.runStateTesting = False
         self.runStateTurn = True
         self.runExploreTurn = True
+        self.crossover = 0
+        self.mutate = 0
         
     def printID(self):
         print(f"{self.id}")
@@ -394,10 +396,10 @@ class AgentMind:
                             self.actUpdateState()
                         numSec = 0
                     else:
-                        if self.runExploreTesting is True:
-                            self.runExploreTreeTesting()
-                        else:
-                            self.runExploreTreeTested()
+                        # if self.runExploreTesting is True:
+                        #     self.runExploreTreeTesting()
+                        # else:
+                        #     self.runExploreTreeTested()
                         
                         if self.runStateTesting is False:
                             self.runStateTestedBehavior()
@@ -457,23 +459,25 @@ class AgentMind:
             totalFoodScore += gene.score
         popAverage = totalFoodScore / len(stateGenes)
         
-        if self.DNATested.getGene(STATEGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(stateGenes) > 1:
+        if self.DNATested.getGene(STATEGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(stateGenes) > 0:
             self.runStateTesting = True
             novelParents = self.noveltyFoodSelect(stateGenes)
             newGene = []
-            # print(f"novel parents {len(novelParents)}")
+            print(f"novel parents {len(novelParents)}")
             if len(novelParents) > 0:
+                self.crossover += 1
                 selfGene = self.DNATested.getGene(STATEGENE)
                 geneSegment = self.DNATested.crossoverProduction(novelParents, selfGene, STATEGENE)
                 newGene.extend(geneSegment)
-                if len(newGene) > 300:
-                    print(f"houston {newGene}")
+                if len(newGene) > GENE_LEN:
+                    print(f"houston dnastate {newGene}")
                 stateChild = Gene(newGene)
                 # stateChild.mutate()
             else:
-                newGene = self.DNATested.mutation(self.DNATested.getGene(STATEGENE))
-                if len(newGene) > 300:
-                    print(f"houston {newGene}")
+                self.mutate += 1
+                newGene = self.DNATested.mutation(self.DNATested.getGene(STATEGENE), STATEGENE)
+                if len(newGene) > GENE_LEN:
+                    print(f"houston dnastate {newGene}")
                 stateChild = Gene(newGene)
 
         else:
@@ -499,10 +503,11 @@ class AgentMind:
             self.DNATested.addGene(STATEGENE, self.DNATesting.getGene(STATEGENE))
         # self.memoryAgents.add(self)
         newGene = self.getDNAStateChild()
+        print(f"{self.id} testing {self.runStateTesting}")
         if self.runStateTesting is True:
             # print(f"testing State {self.id}")
-            if len(newGene.genotype) > 300:
-                print(f"houston {newGene.genotype}")
+            if len(newGene.genotype) > GENE_LEN:
+                print(f"houston actState {newGene.genotype}")
             self.DNATesting.addGene(STATEGENE, newGene)
             self.generate_StateMachineTesting()
             # Test here for solid mutation
@@ -531,7 +536,7 @@ class AgentMind:
         popAverage = totalFound / len(exploreGenes)
         
         # Formula check should switch
-        if self.DNATested.getGene(EXPLOREGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(exploreGenes) > 1:
+        if self.DNATested.getGene(EXPLOREGENE).score <= (popAverage * POPLUATIONTOLERANCE) and len(exploreGenes) > 0:
             self.runExploreTesting = True
             novelParents = self.noveltyFoundSelect(exploreGenes)
             newGene = []
@@ -542,7 +547,7 @@ class AgentMind:
                 exploreChild = Gene(newGene)
                 # exploreChild = Gene(newGene).mutate()
             else:
-                exploreChild = Gene(self.DNATested.mutation(self.DNATested.getGene(EXPLOREGENE)))
+                exploreChild = Gene(self.DNATested.mutation(self.DNATested.getGene(EXPLOREGENE), EXPLOREGENE))
         else:
             exploreChild = None
         

@@ -12,10 +12,10 @@ FOODPERCENT = 130
 FOODCOLOR = (0, 255, 0)
 FOODSIZE = 6
 DENCOLOR = (0, 255, 255)
-NUMAGENTS = 10
+NUMAGENTS = 20
 
 # Agent body Simulation
-HUNGER = 100
+HUNGER = 500
 NEIGHBOOR_LIMIT = 10
 AGENTSIZE = 15
 AGENTVISIONINCREASE = 7
@@ -35,13 +35,13 @@ TESTFOOD = 20
 TERMINALLIMIT = 3500
 
 # Agent Evolution
-EVO_SEC = 250
+EVO_SEC = 300
 GENE_LEN = 200
 GENE_FIRSTCUT = .2
 GENE_SECONDCUT = .6
 GENE_THIRDCUT = .8
 CROSSOVER_PRODUCTION = 5
-MUTATION_RATE = .9
+MUTATION_RATE = .95
 MUTATION_FIRSTDECUT = .1
 MUTATION_SECONDDECUT = .15
 MUTATION_THIRDDECUT = .2
@@ -67,7 +67,6 @@ OLD_STATE_RULES = {
     "<stateID>": ["Pick", "Drop", "Consume", "Explore", "Den", "Known"],
     "<inputtype>": ["isFood", "isTired", "isHungry", "isBored", "isDone"]
 }
-
 
 STATE_RULES = {
     "<start>": ["<start>", "<SM>"],
