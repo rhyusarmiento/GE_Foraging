@@ -151,11 +151,11 @@ class Environment:
             xCurr += 1
         
         # add new object
-        for newPosition in positions:
-            newObject.addPosition(newPosition)
-            with lock_move:
+        with lock_object:
+            for newPosition in positions:
+                newObject.addPosition(newPosition)
                 positionSet = self.mapPositions.setdefault(newPosition, set())
-            positionSet.add(newObject)
+                positionSet.add(newObject)
         self.objects.add(newObject)
         
     def cleanCor(self, num):
@@ -186,26 +186,26 @@ class Environment:
                             del self.mapPositions[position]
         else:
             # print(f'bang {object}')
-            for position in object.positions:
-                if position not in self.mapPositions:
-                    print(f"not here {position}")
-                # why wouldn't an agent position be recorded in the positions
-                with lock_move:
-                    positionSet = self.mapPositions.get(position)
-                    if positionSet is None:
+            with lock_move:
+                for position in object.positions:
+                    if position not in self.mapPositions:
                         print(f"not here {position}")
-                    positionSet.remove(object)
-                    if len(positionSet) == 0:
-                        self.mapPositions.pop(position)
-            self.objects.remove(object)
+                # why wouldn't an agent position be recorded in the positions
+                        positionSet = self.mapPositions.get(position)
+                        if positionSet is None:
+                            print(f"not here {position}")
+                        positionSet.remove(object)
+                        if len(positionSet) == 0:
+                            self.mapPositions.pop(position)
+                self.objects.remove(object)
         
     # TODO: location problem
     def addObject(self, object, objectPositions):
-        self.objects.add(object)
-        for position in objectPositions:
-            with lock_move:
+        with lock_move:
+            self.objects.add(object)
+            for position in objectPositions:
                 positionSet = self.mapPositions.setdefault(position, set())
-            positionSet.add(object)
+                positionSet.add(object)
     
     def isObjectByLocation(self, location):
         x,y = location
