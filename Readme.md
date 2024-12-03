@@ -1,3 +1,13 @@
+## NOTES
+
+This is a live repo
+
+### Current work
+- O-time problem on some runs
+- Building testing apparatus for data collectiond
+- ideas fixes for occasional dead populations
+
+
 # Real Time Grammatical Evolution FSM Agent Swarm
 
 Swarm Algorithms is a field of study that mimics the intelligent behavior of natural swarms found in nature. Similar to their counterparts in nature, the collective intelligence emerges from the interactions and behaviors of individual, non-intelligent components.
