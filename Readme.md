@@ -4,7 +4,7 @@ This is a live repo
 
 ### Current work
 - O-time problem on some runs
-- Building testing apparatus for data collectiond
+- Building testing apparatus for data collection
 - ideas fixes for occasional dead populations
 
 
