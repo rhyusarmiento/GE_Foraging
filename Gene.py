@@ -56,21 +56,25 @@ class DNAManager:
             randGeneIndex = random.randint(0, len(parentGenes) - 1)
             currentParent = parentGenes[randGeneIndex]
             disectBlock = []
-            currentCodon = currentParent.genotype[codonIndex]
-            if graphID == STATEGENE:
-                if currentCodon % self.stateGraph.nodesSize == myGene.genotype[codonIndex] % self.stateGraph.nodesSize:
-                    newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
-                    codonIndex += newIndex
-                else:
-                    disectBlock.append(myGene.genotype[codonIndex])
-                    codonIndex += 1     
-            elif graphID == EXPLOREGENE:
-                if currentCodon % self.behaviorGraph.nodesSize == myGene.genotype[codonIndex] % self.behaviorGraph.nodesSize:
-                    newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
-                    codonIndex += newIndex
-                else:
-                    disectBlock.append(myGene.genotype[codonIndex])
-                    codonIndex += 1  
+            if len(currentParent.genotype) < len(myGene.genotype):
+                disectBlock.append(myGene.genotype[codonIndex])
+                codonIndex += 1  
+            else:
+                currentCodon = currentParent.genotype[codonIndex]
+                if graphID == STATEGENE:
+                    if currentCodon % self.stateGraph.nodesSize == myGene.genotype[codonIndex] % self.stateGraph.nodesSize:
+                        newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                        codonIndex += newIndex
+                    else:
+                        disectBlock.append(myGene.genotype[codonIndex])
+                        codonIndex += 1     
+                elif graphID == EXPLOREGENE:
+                    if currentCodon % self.behaviorGraph.nodesSize == myGene.genotype[codonIndex] % self.behaviorGraph.nodesSize:
+                        newIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, currentParent.genotype)
+                        codonIndex += newIndex
+                    else:
+                        disectBlock.append(myGene.genotype[codonIndex])
+                        codonIndex += 1  
             if len(newGenotype) > len(myGene.genotype):
                 print(f"houston deadloop {newGenotype}")
                 
@@ -92,11 +96,18 @@ class DNAManager:
                 currentNode = self.behaviorGraph.nodeIndex[currentCodon % self.behaviorGraph.nodesSize]
                 nextnode = self.behaviorGraph.find_for_crossover(currentCodon, parentGeno[codonIndex + 1])
 
-            if nextnode is False:
+            if currentNode.isTerminal:
                 disectBlock.append(currentCodon)
                 codonIndex += 1
+                return codonIndex
+            elif nextnode is False:
+                disectBlock.append(currentCodon)
+                codonIndex += 1
+                if codonIndex + 1 >= len(parentGeno):
+                    return codonIndex
                 currentCodon = parentGeno[codonIndex]
-                codonIndex += self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
+                # to skip over like in production
+                codonIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
                 return codonIndex
             elif nextnode is not None:
                 if nextnode.isTerminal:
@@ -104,17 +115,18 @@ class DNAManager:
                     codonIndex += 1
                     currentCodon = parentGeno[codonIndex]
                     disectBlock.append(currentCodon)
+                    codonIndex += 1
                     return codonIndex
                 else:
                     disectBlock.append(currentCodon)
                     codonIndex += 1
+                    if codonIndex + 1 >= len(parentGeno):
+                        return codonIndex
                     currentCodon = parentGeno[codonIndex]
-                    codonIndex += self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
+                    codonIndex = self.genoAppendSearch(codonIndex, disectBlock, graphID, currentCodon, parentGeno)
                     return codonIndex
-            elif currentNode.isTermminal:
-                disectBlock.append(currentCodon)
-                codonIndex += 1
-                return codonIndex
+        else:
+            return codonIndex
             
     # mutation fix remove geno expanition
     def mutation(self, gene, graphid):

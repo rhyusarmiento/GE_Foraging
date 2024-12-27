@@ -463,7 +463,7 @@ class AgentMind:
             self.runStateTesting = True
             novelParents = self.noveltyFoodSelect(stateGenes)
             newGene = []
-            print(f"novel parents {len(novelParents)}")
+            # print(f"novel parents {len(novelParents)}")
             if len(novelParents) > 0:
                 self.crossover += 1
                 selfGene = self.DNATested.getGene(STATEGENE)
@@ -503,7 +503,7 @@ class AgentMind:
             self.DNATested.addGene(STATEGENE, self.DNATesting.getGene(STATEGENE))
         # self.memoryAgents.add(self)
         newGene = self.getDNAStateChild()
-        print(f"{self.id} testing {self.runStateTesting}")
+        # print(f"{self.id} testing {self.runStateTesting}")
         if self.runStateTesting is True:
             # print(f"testing State {self.id}")
             if len(newGene.genotype) > GENE_LEN:
@@ -569,7 +569,7 @@ class AgentMind:
         # self.memoryAgents.append(self)
         newDNA = self.getDNAExploreChild()
         if self.runExploreTesting is True: 
-            print(f"{self.id} testing explore")
+            # print(f"{self.id} testing explore")
             self.DNATesting.addGene(EXPLOREGENE, newDNA)
             self.generate_ExploreTreeTesting()
     

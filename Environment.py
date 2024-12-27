@@ -1,10 +1,11 @@
 from const import ENVIORN_DIM, ENVIORNTEST, TESTFOOD, WORLDFILL, DENBORDERSIZE, FOODCOLOR, FOODSIZE, DENCOLOR, DENSIZE, TOTALFOOD #FOODPERCENT,
-from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC
+from const import AGENTSIZE, AGENTVISIONINCREASE, AGENTCOLOR, NEIGHBOOR_LIMIT, HUNGER, MOVEMENTSPEED, EVO_SEC, NUMAGENTS
 from const import NORTH, AGENT, FOOD, DEN, WEST, EAST, SOUTH, ISDONE
 import pygame as pyg
 import numpy as np
 import random
 import threading
+import math
 # import math as m
 
 lock_envir = threading.Lock()
@@ -395,6 +396,7 @@ class AgentBody(ObjectWraper):
         xCurr = xStart
         yCurr = yStart
     
+    # HUGE PROBLEM boundary
         while xCurr <= xStart + (2 * radius):
             while yCurr <= yStart + (2 * radius):
                 objects = self.seeLocation((self.cleanCor(xCurr), self.cleanCor(yCurr)))
@@ -404,7 +406,7 @@ class AgentBody(ObjectWraper):
                             foodNear.add(object)
                 yCurr += 1
             yCurr = yStart
-            xCurr += xStart
+            xCurr += 1
             
         for food in foodNear:
             self.home.addFoodLocation(food)
@@ -713,15 +715,18 @@ class Den(ObjectWraper):
         self.CurrentFoodAcclerAvg = 0
         self.color = DENCOLOR
         self.foodLocations = set()
+        self.timeRecording = {}
     
     def who(self):
         return DEN
     
     def evoTimer(self):
         clock = pyg.time.Clock() 
+        stopwatch = 0
         numSec = 0
         while self.world.rendering:
             numSec += 1
+            stopwatch += 1
             if numSec == EVO_SEC:
                 self.CurrentFoodVelocityAvg = self.intervalFood / EVO_SEC
                 self.CurrentFoodAcclerAvg = (self.CurrentFoodVelocityAvg - self.lastFoodVelAvg) / EVO_SEC
@@ -729,6 +734,7 @@ class Den(ObjectWraper):
                 self.lastFoodVelAvg = self.CurrentFoodVelocityAvg
                 self.intervalFood = 0 
                 numSec = 0
+                self.timeRecording[stopwatch] = self.lifetimeFood
             clock.tick(60)
     
     def depositFood(self, food):

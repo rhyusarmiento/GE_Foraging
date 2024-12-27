@@ -14,7 +14,7 @@ Swarm Algorithms is a field of study that mimics the intelligent behavior of nat
 
 Rather than explicitly coding or programming the behavior of each non-intelligent component, the behavior is derived using a grammatical evolution algorithm. This approach enables the swarm to optimize its actions relative to its available commands and environment. For the remainder of the summary, the individual components of the swarm will be referred to as agents.
 
-The project is simulated through Pygame and uses python's mulithreading. Each agent's game loop is run on an individual thread until end condtions are met. The end condition is determined by the number of actions. 
+The project is simulated through Pygame and uses python's multithreading. Each agent's game loop is run on an individual thread until end condtions are met. The end condition is determined by the number of actions. 
 
 - **Dependencies**
     - Numpy
@@ -48,7 +48,7 @@ The agent builds a FSM based on a given `phenotype` string which was generated b
   - `"isBored"`
   - `"isHungry"`
 
-The phenotype contains an order of commands for which a state is create for each corispoindg command. Each new state is added to a `fillqueue` and the transition type `isDone` is set between itself and the next state. The last state in the phenotype sets its `isDone` transition to the first state, creating a loop. After which, iterate through the `fillqueue` to connect created states with remainding transition types. Each state connects to an existing state that the command list determines by iteration. The chosen state is the lasted created state of that state type. No two transition types for a state leads to the same state. This is done by decrementing through the list of available states of that type. 
+The phenotype contains an order of commands for which a state is create for each corresponding command. Each new state is added to a `fillqueue` and the transition type `isDone` is set between itself and the next state. The last state in the phenotype sets its `isDone` transition to the first state, creating a loop. After which, iterate through the `fillqueue` to connect created states with remaining transition types. Each state connects to an existing state that the command list determines by iteration. The chosen state is the lasted created state of that state type. No two transition types for a state leads to the same state. This is done by decrementing through the list of available states of that type. 
 
 ![Completed FSM](./AgentFSMVisual.png)
 

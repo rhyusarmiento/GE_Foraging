@@ -1,6 +1,4 @@
-# issue with ending known food node
-# Issue with not pickup food
-# protential issue with evo
+import math
 
 # World
 TOTALFOOD = 300
@@ -12,11 +10,11 @@ FOODPERCENT = 130
 FOODCOLOR = (0, 255, 0)
 FOODSIZE = 6
 DENCOLOR = (0, 255, 255)
-NUMAGENTS = 20
+NUMAGENTS = 30
 
 # Agent body Simulation
 HUNGER = 500
-NEIGHBOOR_LIMIT = 10
+NEIGHBOOR_LIMIT = math.ceil(NUMAGENTS * .3)  
 AGENTSIZE = 15
 AGENTVISIONINCREASE = 7
 AGENTCOLOR = (255, 0, 0) # red
@@ -32,7 +30,7 @@ EVO_TIMER = 70
 EVO_LIMIT = 50
 ENVIORNTEST = 50
 TESTFOOD = 20
-TERMINALLIMIT = 3500
+TERMINALLIMIT = 2000
 
 # Agent Evolution
 EVO_SEC = 300

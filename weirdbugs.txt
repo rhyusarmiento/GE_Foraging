@@ -1,10 +1,12 @@
-File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
+Exception in thread Thread-164 (runAgent):
+Traceback (most recent call last):
+  File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 1038, in _bootstrap_inner
     self.run()
   File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\.venv\Lib\site-packages\ipykernel\ipkernel.py", line 766, in run_closure
     _threading_Thread_run(self)
   File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", line 975, in run
     self._target(*self._args, **self._kwargs)
-  File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 396, in runAgent
+  File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 391, in runAgent
     self.actUpdateState()
   File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 505, in actUpdateState
     newGene = self.getDNAStateChild()
@@ -12,6 +14,5 @@ File "C:\Users\rhyus\AppData\Local\Programs\Python\Python311\Lib\threading.py", 
   File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Agent.py", line 470, in getDNAStateChild
     geneSegment = self.DNATested.crossoverProduction(novelParents, selfGene, STATEGENE)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Gene.py", line 63, in crossoverProduction
-    codonIndex += newIndex
-TypeError: unsupported operand type(s) for +=: 'int' and 'NoneType'
+  File "c:\Users\rhyus\OneDrive\Desktop\development\RAwork\GE_Foraging\Gene.py", line 59, in crossoverProduction
+    currentCodon = currentParent.genotype[codonIndex]
